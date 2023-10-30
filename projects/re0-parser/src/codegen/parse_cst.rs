@@ -28,10 +28,11 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::IfElseBlock => parse_if_else_block(state),
         LifeRestartRule::Expression => parse_expression(state),
         LifeRestartRule::Term => parse_term(state),
-        LifeRestartRule::Atomic => parse_atomic(state),
         LifeRestartRule::Prefix => parse_prefix(state),
         LifeRestartRule::Infix => parse_infix(state),
         LifeRestartRule::Suffix => parse_suffix(state),
+        LifeRestartRule::Atomic => parse_atomic(state),
+        LifeRestartRule::List => parse_list(state),
         LifeRestartRule::String => parse_string(state),
         LifeRestartRule::StringRaw => parse_string_raw(state),
         LifeRestartRule::StringRawText => parse_string_raw_text(state),
@@ -43,8 +44,6 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::TextAny => parse_text_any(state),
         LifeRestartRule::Identifier => parse_identifier(state),
         LifeRestartRule::Integer => parse_integer(state),
-        LifeRestartRule::RangeExact => parse_range_exact(state),
-        LifeRestartRule::Range => parse_range(state),
         LifeRestartRule::Boolean => parse_boolean(state),
         LifeRestartRule::COMMA => parse_comma(state),
         LifeRestartRule::COLON => parse_colon(state),
@@ -60,6 +59,7 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::KW_ENUMERATE => parse_kw_enumerate(state),
         LifeRestartRule::KW_OPTIONS => parse_kw_options(state),
         LifeRestartRule::KW_IF => parse_kw_if(state),
+        LifeRestartRule::KW_ELSE_IF => parse_kw_else_if(state),
         LifeRestartRule::KW_ELSE => parse_kw_else(state),
         LifeRestartRule::WhiteSpace => parse_white_space(state),
         LifeRestartRule::Comment => parse_comment(state),
@@ -589,19 +589,6 @@ fn parse_term(state: Input) -> Output {
     })
 }
 #[inline]
-fn parse_atomic(state: Input) -> Output {
-    state.rule(LifeRestartRule::Atomic, |s| {
-        Err(s)
-            .or_else(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
-            .or_else(|s| parse_integer(s).and_then(|s| s.tag_node("integer")))
-            .or_else(|s| parse_string_raw(s).and_then(|s| s.tag_node("string_raw")))
-            .or_else(|s| parse_string_normal(s).and_then(|s| s.tag_node("string_normal")))
-            .or_else(|s| parse_boolean(s).and_then(|s| s.tag_node("boolean")))
-            .or_else(|s| parse_range_exact(s).and_then(|s| s.tag_node("range_exact")))
-            .or_else(|s| parse_range(s).and_then(|s| s.tag_node("range")))
-    })
-}
-#[inline]
 fn parse_prefix(state: Input) -> Output {
     state.rule(LifeRestartRule::Prefix, |s| {
         Err(s).or_else(|s| {
@@ -690,9 +677,9 @@ fn parse_infix(state: Input) -> Output {
             .or_else(|s| {
                 builtin_regex(s, {
                     static REGEX: OnceLock<Regex> = OnceLock::new();
-                    REGEX.get_or_init(|| Regex::new("^(有|has)").unwrap())
+                    REGEX.get_or_init(|| Regex::new("^(有|has|contains)").unwrap())
                 })
-                .and_then(|s| s.tag_node("ne"))
+                .and_then(|s| s.tag_node("has"))
             })
             .or_else(|s| {
                 builtin_regex(s, {
@@ -719,6 +706,57 @@ fn parse_suffix(state: Input) -> Output {
                 REGEX.get_or_init(|| Regex::new("^(%)").unwrap())
             })
             .and_then(|s| s.tag_node("suffix_0"))
+        })
+    })
+}
+#[inline]
+fn parse_atomic(state: Input) -> Output {
+    state.rule(LifeRestartRule::Atomic, |s| {
+        Err(s)
+            .or_else(|s| parse_list(s).and_then(|s| s.tag_node("list")))
+            .or_else(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
+            .or_else(|s| parse_integer(s).and_then(|s| s.tag_node("integer")))
+            .or_else(|s| parse_string_raw(s).and_then(|s| s.tag_node("string_raw")))
+            .or_else(|s| parse_string_normal(s).and_then(|s| s.tag_node("string_normal")))
+            .or_else(|s| parse_boolean(s).and_then(|s| s.tag_node("boolean")))
+    })
+}
+#[inline]
+fn parse_list(state: Input) -> Output {
+    state.rule(LifeRestartRule::List, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| builtin_text(s, "[", false))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.optional(|s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| {
+                                    s.repeat(0..4294967295, |s| {
+                                        s.sequence(|s| {
+                                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                                s.sequence(|s| {
+                                                    Ok(s)
+                                                        .and_then(|s| parse_comma(s).and_then(|s| s.tag_node("comma")))
+                                                        .and_then(|s| builtin_ignore(s))
+                                                        .and_then(|s| {
+                                                            parse_expression(s).and_then(|s| s.tag_node("expression"))
+                                                        })
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| s.optional(|s| parse_comma(s).and_then(|s| s.tag_node("comma"))))
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "]", false))
         })
     })
 }
@@ -825,36 +863,6 @@ fn parse_integer(state: Input) -> Output {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
             REGEX.get_or_init(|| Regex::new("^(0|[1-9][0-9]*)").unwrap())
-        })
-    })
-}
-#[inline]
-fn parse_range_exact(state: Input) -> Output {
-    state.rule(LifeRestartRule::RangeExact, |s| {
-        s.sequence(|s| {
-            Ok(s)
-                .and_then(|s| builtin_text(s, "{", false))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| parse_integer(s).and_then(|s| s.tag_node("integer")))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, "}", false))
-        })
-    })
-}
-#[inline]
-fn parse_range(state: Input) -> Output {
-    state.rule(LifeRestartRule::Range, |s| {
-        s.sequence(|s| {
-            Ok(s)
-                .and_then(|s| builtin_text(s, "{", false))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| s.optional(|s| parse_integer(s).and_then(|s| s.tag_node("min"))))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, ",", false))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| s.optional(|s| parse_integer(s).and_then(|s| s.tag_node("max"))))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, "}", false))
         })
     })
 }
@@ -1000,7 +1008,16 @@ fn parse_kw_if(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_IF, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(if|若)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(若|如果|if)").unwrap())
+        })
+    })
+}
+#[inline]
+fn parse_kw_else_if(state: Input) -> Output {
+    state.rule(LifeRestartRule::KW_ELSE_IF, |s| {
+        s.match_regex({
+            static REGEX: OnceLock<Regex> = OnceLock::new();
+            REGEX.get_or_init(|| Regex::new("^(或者|elseif)").unwrap())
         })
     })
 }
@@ -1009,7 +1026,7 @@ fn parse_kw_else(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_ELSE, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(else|否则)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(否则|else)").unwrap())
         })
     })
 }

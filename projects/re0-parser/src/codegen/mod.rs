@@ -56,10 +56,11 @@ pub enum LifeRestartRule {
     IfElseBlock,
     Expression,
     Term,
-    Atomic,
     Prefix,
     Infix,
     Suffix,
+    Atomic,
+    List,
     String,
     StringRaw,
     StringRawText,
@@ -71,8 +72,6 @@ pub enum LifeRestartRule {
     TextAny,
     Identifier,
     Integer,
-    RangeExact,
-    Range,
     Boolean,
     COMMA,
     COLON,
@@ -88,6 +87,7 @@ pub enum LifeRestartRule {
     KW_ENUMERATE,
     KW_OPTIONS,
     KW_IF,
+    KW_ELSE_IF,
     KW_ELSE,
     WhiteSpace,
     Comment,
@@ -128,10 +128,11 @@ impl YggdrasilRule for LifeRestartRule {
             Self::IfElseBlock => "",
             Self::Expression => "",
             Self::Term => "",
-            Self::Atomic => "",
             Self::Prefix => "",
             Self::Infix => "",
             Self::Suffix => "",
+            Self::Atomic => "",
+            Self::List => "",
             Self::String => "",
             Self::StringRaw => "",
             Self::StringRawText => "",
@@ -143,8 +144,6 @@ impl YggdrasilRule for LifeRestartRule {
             Self::TextAny => "",
             Self::Identifier => "",
             Self::Integer => "",
-            Self::RangeExact => "",
-            Self::Range => "",
             Self::Boolean => "",
             Self::COMMA => "",
             Self::COLON => "",
@@ -160,6 +159,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::KW_ENUMERATE => "",
             Self::KW_OPTIONS => "",
             Self::KW_IF => "",
+            Self::KW_ELSE_IF => "",
             Self::KW_ELSE => "",
             Self::WhiteSpace => "",
             Self::Comment => "",
@@ -348,17 +348,6 @@ pub struct TermNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum AtomicNode {
-    Boolean(BooleanNode),
-    Identifier(IdentifierNode),
-    Integer(IntegerNode),
-    Range(RangeNode),
-    RangeExact(RangeExactNode),
-    StringNormal(StringNormalNode),
-    StringRaw(StringRawNode),
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PrefixNode {
     Prefix0,
 }
@@ -371,6 +360,7 @@ pub enum InfixNode {
     EQ,
     GEQ,
     GT,
+    Has,
     LEQ,
     LT,
     NE,
@@ -382,6 +372,23 @@ pub enum InfixNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SuffixNode {
     Suffix0,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum AtomicNode {
+    Boolean(BooleanNode),
+    Identifier(IdentifierNode),
+    Integer(IntegerNode),
+    List(ListNode),
+    StringNormal(StringNormalNode),
+    StringRaw(StringRawNode),
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ListNode {
+    pub comma: Vec<CommaNode>,
+    pub expression: Vec<ExpressionNode>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -446,19 +453,6 @@ pub struct IdentifierNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IntegerNode {
     pub text: String,
-    pub span: Range<usize>,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RangeExactNode {
-    pub integer: IntegerNode,
-    pub span: Range<usize>,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RangeNode {
-    pub max: Option<IntegerNode>,
-    pub min: Option<IntegerNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -535,6 +529,11 @@ pub struct KwOptionsNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwIfNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwElseIfNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]

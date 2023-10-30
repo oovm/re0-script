@@ -113,17 +113,6 @@ atomic class Term {
     (Prefix HIDE)* Atomic (HIDE Suffix)*
 }
 
-@railway(false)
-union Atomic {
-    | Identifier
-    | Integer
-    | StringRaw
-    | StringNormal
-    | Boolean
-    | RangeExact
-    | Range
-}
-
 @style(operator)
 @railway(false)
 union Prefix {
@@ -143,7 +132,7 @@ union Infix {
     | /小于等于|<=/ #LEQ
     | /为|等于|==/  #EQ
     | /不等于|!=/   #NE
-    | /有|has/   #NE
+    | /有|has|contains/   #Has
     | /&&|且/      #And
     | /\|\||或/    #Or
 }
@@ -153,6 +142,20 @@ union Suffix {
     | /%/
 }
 
+// === 表达式 === ---------------------------------------------------------------------------------------------------------
+@railway(false)
+union Atomic {
+    | List
+    | Identifier
+    | Integer
+    | StringRaw
+    | StringNormal
+    | Boolean
+}
+class List {
+    '[' (Expression (COMMA Expression)* COMMA?)? ']'
+}
+// === 表达式 === ---------------------------------------------------------------------------------------------------------
 atomic union String {
     | StringRaw
 }
@@ -199,14 +202,6 @@ text class Integer {
     /0|[1-9][0-9]*/
 }
 
-class RangeExact {
-    '{' Integer '}'
-}
-
-class Range {
-    '{' (min: Integer)? ',' (max: Integer)? '}'
-}
-
 union Boolean {
     | /真|true/ #True
     | /假|false/ #False
@@ -233,8 +228,9 @@ token {
     KW_EFFECT: /效果|一次性效果|effects?/
     KW_ENUMERATE: /枚举|enumerate/
     KW_OPTIONS: /选项|options/
-    KW_IF: /if|若/
-    KW_ELSE: /else|否则/
+    KW_IF: /若|如果|if/
+    KW_ELSE_IF: /或者|elseif/
+    KW_ELSE: /否则|else/
 }
 
 @railway(false)
