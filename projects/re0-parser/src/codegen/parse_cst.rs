@@ -9,20 +9,24 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::PropertyItem => parse_property_item(state),
         LifeRestartRule::EnumerateStatement => parse_enumerate_statement(state),
         LifeRestartRule::OptionStatement => parse_option_statement(state),
+        LifeRestartRule::OptionItem => parse_option_item(state),
         LifeRestartRule::TraitGroup => parse_trait_group(state),
         LifeRestartRule::TraitStatement => parse_trait_statement(state),
         LifeRestartRule::TraitItem => parse_trait_item(state),
         LifeRestartRule::TraitProperty => parse_trait_property(state),
+        LifeRestartRule::EventGroup => parse_event_group(state),
         LifeRestartRule::EventStatement => parse_event_statement(state),
-        LifeRestartRule::EventBlock => parse_event_block(state),
+        LifeRestartRule::EventItem => parse_event_item(state),
         LifeRestartRule::EventProperty => parse_event_property(state),
         LifeRestartRule::IdStatement => parse_id_statement(state),
         LifeRestartRule::DescriptionStatement => parse_description_statement(state),
         LifeRestartRule::RequirementStatement => parse_requirement_statement(state),
         LifeRestartRule::Expression => parse_expression(state),
+        LifeRestartRule::Term => parse_term(state),
         LifeRestartRule::Atomic => parse_atomic(state),
         LifeRestartRule::Prefix => parse_prefix(state),
         LifeRestartRule::Infix => parse_infix(state),
+        LifeRestartRule::Suffix => parse_suffix(state),
         LifeRestartRule::String => parse_string(state),
         LifeRestartRule::StringRaw => parse_string_raw(state),
         LifeRestartRule::StringRawText => parse_string_raw_text(state),
@@ -38,6 +42,7 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::Range => parse_range(state),
         LifeRestartRule::Boolean => parse_boolean(state),
         LifeRestartRule::COMMA => parse_comma(state),
+        LifeRestartRule::COLON => parse_colon(state),
         LifeRestartRule::KW_PROPERTY => parse_kw_property(state),
         LifeRestartRule::KW_TRAIT_GROUP => parse_kw_trait_group(state),
         LifeRestartRule::KW_TRAIT => parse_kw_trait(state),
@@ -79,6 +84,8 @@ fn parse_statement(state: Input) -> Output {
             .or_else(|s| parse_property_statement(s).and_then(|s| s.tag_node("property_statement")))
             .or_else(|s| parse_trait_group(s).and_then(|s| s.tag_node("trait_group")))
             .or_else(|s| parse_trait_statement(s).and_then(|s| s.tag_node("trait_statement")))
+            .or_else(|s| parse_event_group(s).and_then(|s| s.tag_node("event_group")))
+            .or_else(|s| parse_event_statement(s).and_then(|s| s.tag_node("event_statement")))
             .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
     })
 }
@@ -87,7 +94,7 @@ fn parse_eos(state: Input) -> Output {
     state.rule(LifeRestartRule::EOS, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(;)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(,;)").unwrap())
         })
     })
 }
@@ -138,32 +145,13 @@ fn parse_enumerate_statement(state: Input) -> Output {
                 .and_then(|s| builtin_text(s, "[", false))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| {
-                    s.optional(|s| {
+                    s.repeat(0..4294967295, |s| {
                         s.sequence(|s| {
-                            Ok(s)
-                                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
-                                .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| {
-                                    s.repeat(0..4294967295, |s| {
-                                        s.sequence(|s| {
-                                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
-                                                s.sequence(|s| {
-                                                    Ok(s)
-                                                        .and_then(|s| {
-                                                            s.sequence(|s| {
-                                                                Ok(s)
-                                                                    .and_then(|s| parse_comma(s))
-                                                                    .and_then(|s| builtin_ignore(s))
-                                                            })
-                                                        })
-                                                        .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
-                                                })
-                                            })
-                                        })
-                                    })
-                                })
-                                .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| s.optional(|s| parse_comma(s)))
+                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                Err(s)
+                                    .or_else(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
+                                    .or_else(|s| parse_comma(s))
+                            })
                         })
                     })
                 })
@@ -176,43 +164,74 @@ fn parse_enumerate_statement(state: Input) -> Output {
 fn parse_option_statement(state: Input) -> Output {
     state.rule(LifeRestartRule::OptionStatement, |s| {
         s.sequence(|s| {
-            Ok(s)
-                .and_then(|s| parse_kw_options(s))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, "[", false))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| {
-                    s.optional(|s| {
+            Ok(s).and_then(|s| parse_kw_options(s)).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                Err(s)
+                    .or_else(|s| {
                         s.sequence(|s| {
                             Ok(s)
-                                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
+                                .and_then(|s| builtin_text(s, "[", false))
                                 .and_then(|s| builtin_ignore(s))
                                 .and_then(|s| {
                                     s.repeat(0..4294967295, |s| {
                                         s.sequence(|s| {
                                             Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
-                                                s.sequence(|s| {
-                                                    Ok(s)
-                                                        .and_then(|s| {
-                                                            s.sequence(|s| {
-                                                                Ok(s)
-                                                                    .and_then(|s| parse_comma(s))
-                                                                    .and_then(|s| builtin_ignore(s))
-                                                            })
-                                                        })
-                                                        .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
-                                                })
+                                                Err(s)
+                                                    .or_else(|s| parse_option_item(s).and_then(|s| s.tag_node("option_item")))
+                                                    .or_else(|s| parse_eos(s))
                                             })
                                         })
                                     })
                                 })
                                 .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| s.optional(|s| parse_comma(s)))
+                                .and_then(|s| builtin_text(s, "]", false))
                         })
                     })
+                    .or_else(|s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| builtin_text(s, "{", false))
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| {
+                                    s.repeat(0..4294967295, |s| {
+                                        s.sequence(|s| {
+                                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                                Err(s)
+                                                    .or_else(|s| parse_option_item(s).and_then(|s| s.tag_node("option_item")))
+                                                    .or_else(|s| parse_eos(s))
+                                            })
+                                        })
+                                    })
+                                })
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| builtin_text(s, "}", false))
+                        })
+                    })
+            })
+        })
+    })
+}
+#[inline]
+fn parse_option_item(state: Input) -> Output {
+    state.rule(LifeRestartRule::OptionItem, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| {
+                    s.sequence(|s| {
+                        Ok(s)
+                            .and_then(|s| {
+                                s.optional(|s| {
+                                    s.sequence(|s| {
+                                        Ok(s)
+                                            .and_then(|s| parse_integer(s).and_then(|s| s.tag_node("weight")))
+                                            .and_then(|s| builtin_ignore(s))
+                                            .and_then(|s| parse_colon(s))
+                                    })
+                                })
+                            })
+                            .and_then(|s| builtin_ignore(s))
+                    })
                 })
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, "]", false))
+                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
         })
     })
 }
@@ -290,23 +309,14 @@ fn parse_trait_property(state: Input) -> Output {
     })
 }
 #[inline]
-fn parse_event_statement(state: Input) -> Output {
-    state.rule(LifeRestartRule::EventStatement, |s| {
+fn parse_event_group(state: Input) -> Output {
+    state.rule(LifeRestartRule::EventGroup, |s| {
         s.sequence(|s| {
             Ok(s)
-                .and_then(|s| parse_kw_event(s))
+                .and_then(|s| parse_kw_event_group(s))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
                 .and_then(|s| builtin_ignore(s))
-                .and_then(|s| parse_event_block(s).and_then(|s| s.tag_node("event_block")))
-        })
-    })
-}
-#[inline]
-fn parse_event_block(state: Input) -> Output {
-    state.rule(LifeRestartRule::EventBlock, |s| {
-        s.sequence(|s| {
-            Ok(s)
                 .and_then(|s| builtin_text(s, "{", false))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| {
@@ -314,7 +324,7 @@ fn parse_event_block(state: Input) -> Output {
                         s.sequence(|s| {
                             Ok(s)
                                 .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| parse_event_property(s).and_then(|s| s.tag_node("event_property")))
+                                .and_then(|s| parse_event_statement(s).and_then(|s| s.tag_node("event_statement")))
                         })
                     })
                 })
@@ -324,35 +334,44 @@ fn parse_event_block(state: Input) -> Output {
     })
 }
 #[inline]
-fn parse_event_property(state: Input) -> Output {
-    state.rule(LifeRestartRule::EventProperty, |s| {
+fn parse_event_statement(state: Input) -> Output {
+    state.rule(LifeRestartRule::EventStatement, |s| {
         s.sequence(|s| {
             Ok(s)
+                .and_then(|s| parse_kw_event(s))
+                .and_then(|s| builtin_ignore(s))
                 .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
                 .and_then(|s| builtin_ignore(s))
-                .and_then(|s| Err(s).or_else(|s| builtin_text(s, ":", false)).or_else(|s| builtin_text(s, "[", false)))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                .and_then(|s| builtin_text(s, "{", false))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| {
-                    s.optional(|s| {
-                        Err(s)
-                            .or_else(|s| builtin_text(s, "]", false))
-                            .or_else(|s| {
-                                s.sequence(|s| {
-                                    Ok(s)
-                                        .and_then(|s| builtin_text(s, "{", false))
-                                        .and_then(|s| builtin_ignore(s))
-                                        .and_then(|s| parse_event_block(s).and_then(|s| s.tag_node("event_block")))
-                                        .and_then(|s| builtin_ignore(s))
-                                        .and_then(|s| builtin_text(s, "}", false))
-                                })
-                            })
-                            .or_else(|s| parse_event_block(s).and_then(|s| s.tag_node("event_block")))
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| parse_event_item(s).and_then(|s| s.tag_node("event_item")))
+                        })
                     })
                 })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "}", false))
         })
     })
+}
+#[inline]
+fn parse_event_item(state: Input) -> Output {
+    state.rule(LifeRestartRule::EventItem, |s| {
+        Err(s)
+            .or_else(|s| parse_id_statement(s).and_then(|s| s.tag_node("id_statement")))
+            .or_else(|s| parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
+            .or_else(|s| parse_requirement_statement(s).and_then(|s| s.tag_node("requirement_statement")))
+            .or_else(|s| parse_option_statement(s).and_then(|s| s.tag_node("option_statement")))
+            .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
+    })
+}
+#[inline]
+fn parse_event_property(state: Input) -> Output {
+    state.rule(LifeRestartRule::EventProperty, |s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
 }
 #[inline]
 fn parse_id_statement(state: Input) -> Output {
@@ -383,29 +402,13 @@ fn parse_description_statement(state: Input) -> Output {
                         .and_then(|s| builtin_text(s, "[", false))
                         .and_then(|s| builtin_ignore(s))
                         .and_then(|s| {
-                            s.optional(|s| {
+                            s.repeat(0..4294967295, |s| {
                                 s.sequence(|s| {
-                                    Ok(s)
-                                        .and_then(|s| parse_string(s).and_then(|s| s.tag_node("string")))
-                                        .and_then(|s| builtin_ignore(s))
-                                        .and_then(|s| {
-                                            s.repeat(0..4294967295, |s| {
-                                                s.sequence(|s| {
-                                                    Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
-                                                        s.sequence(|s| {
-                                                            Ok(s)
-                                                                .and_then(|s| parse_comma(s))
-                                                                .and_then(|s| builtin_ignore(s))
-                                                                .and_then(|s| {
-                                                                    parse_string(s).and_then(|s| s.tag_node("string"))
-                                                                })
-                                                        })
-                                                    })
-                                                })
-                                            })
-                                        })
-                                        .and_then(|s| builtin_ignore(s))
-                                        .and_then(|s| s.optional(|s| parse_comma(s)))
+                                    Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                        Err(s)
+                                            .or_else(|s| parse_string(s).and_then(|s| s.tag_node("string")))
+                                            .or_else(|s| parse_eos(s))
+                                    })
                                 })
                             })
                         })
@@ -424,13 +427,64 @@ fn parse_requirement_statement(state: Input) -> Output {
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| builtin_text(s, "{", false))
                 .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                Err(s)
+                                    .or_else(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                    .or_else(|s| parse_eos(s))
+                            })
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
                 .and_then(|s| builtin_text(s, "}", false))
         })
     })
 }
 #[inline]
 fn parse_expression(state: Input) -> Output {
-    state.rule(LifeRestartRule::Expression, |s| parse_atomic(s).and_then(|s| s.tag_node("atomic")))
+    state.rule(LifeRestartRule::Expression, |s| {
+        s.sequence(|s| {
+            Ok(s).and_then(|s| parse_term(s).and_then(|s| s.tag_node("term"))).and_then(|s| {
+                s.sequence(|s| {
+                    Ok(s)
+                        .and_then(|s| builtin_ignore(s))
+                        .and_then(|s| parse_infix(s).and_then(|s| s.tag_node("infix")))
+                        .and_then(|s| builtin_ignore(s))
+                        .and_then(|s| parse_term(s).and_then(|s| s.tag_node("term")))
+                })
+            })
+        })
+    })
+}
+#[inline]
+fn parse_term(state: Input) -> Output {
+    state.rule(LifeRestartRule::Term, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| {
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| parse_prefix(s).and_then(|s| s.tag_node("prefix")))
+                                .and_then(|s| builtin_ignore(s))
+                        })
+                    })
+                })
+                .and_then(|s| parse_atomic(s).and_then(|s| s.tag_node("atomic")))
+                .and_then(|s| {
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| parse_suffix(s).and_then(|s| s.tag_node("suffix")))
+                        })
+                    })
+                })
+        })
+    })
 }
 #[inline]
 fn parse_atomic(state: Input) -> Output {
@@ -517,6 +571,18 @@ fn parse_infix(state: Input) -> Output {
                 })
                 .and_then(|s| s.tag_node("or"))
             })
+    })
+}
+#[inline]
+fn parse_suffix(state: Input) -> Output {
+    state.rule(LifeRestartRule::Suffix, |s| {
+        Err(s).or_else(|s| {
+            builtin_regex(s, {
+                static REGEX: OnceLock<Regex> = OnceLock::new();
+                REGEX.get_or_init(|| Regex::new("^(%)").unwrap())
+            })
+            .and_then(|s| s.tag_node("suffix_0"))
+        })
     })
 }
 #[inline]
@@ -685,6 +751,15 @@ fn parse_comma(state: Input) -> Output {
     })
 }
 #[inline]
+fn parse_colon(state: Input) -> Output {
+    state.rule(LifeRestartRule::COLON, |s| {
+        s.match_regex({
+            static REGEX: OnceLock<Regex> = OnceLock::new();
+            REGEX.get_or_init(|| Regex::new("^(:)").unwrap())
+        })
+    })
+}
+#[inline]
 fn parse_kw_property(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_PROPERTY, |s| {
         s.match_regex({
@@ -716,7 +791,7 @@ fn parse_kw_event_group(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_EVENT_GROUP, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(事件组|events|event-group)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(故事组|事件组|events|event-group)").unwrap())
         })
     })
 }
@@ -725,7 +800,7 @@ fn parse_kw_event(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_EVENT, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(事件|event)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(故事|事件|event)").unwrap())
         })
     })
 }

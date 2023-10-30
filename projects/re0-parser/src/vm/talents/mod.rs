@@ -1,71 +1,61 @@
 use super::*;
+use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Debug)]
 pub struct TalentManager {
-    /// 从一开始的属性
-    counter: NonZeroUsize,
-    talents: BTreeMap<NonZeroUsize, TalentItem>,
-    // 暂时没分配到 id 的属性
-    buffer: Vec<TalentItem>,
+    /// 计数器
+    indexer: NonZeroUsize,
+    stories: BTreeMap<NonZeroUsize, TalentItem>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TalentItem {
-    pub name: String,
-    pub id: Option<NonZeroUsize>,
+    pub id: Identifier,
+    /// 属性 ID, 用于快速查询
+    pub index: Option<NonZeroUsize>,
+    /// 描述文本
     pub text: Vec<String>,
-    pub file: Option<Url>,
-    pub span: Range<usize>,
+}
+
+impl Debug for TalentItem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let w = &mut f.debug_struct("TalentItem");
+        w.field("name", &self.id.name);
+        if let Some(s) = self.index {
+            w.field("id", &s);
+        }
+        w.field("span", &self.id.display());
+        w.finish()
+    }
 }
 
 impl Default for TalentManager {
     fn default() -> Self {
-        TalentManager { counter: unsafe { NonZeroUsize::new_unchecked(1) }, talents: Default::default(), buffer: vec![] }
-    }
-}
-
-impl Default for TalentItem {
-    fn default() -> Self {
-        Self { name: "".to_string(), id: None, text: vec![], file: None, span: Default::default() }
+        TalentManager { indexer: unsafe { NonZeroUsize::new_unchecked(1) }, stories: Default::default() }
     }
 }
 
 impl TalentManager {
-    pub fn insert(&mut self, item: TalentItem) -> Result<(), LifeError> {
-        match item.id {
-            Some(s) => {
-                if self.talents.contains_key(&s) {
-                    Err(LifeErrorKind::DuplicateError {
-                        message: "Duplicate talent id".to_string(),
-                        old: (self.talents.get(&s).unwrap().file.clone(), self.talents.get(&s).unwrap().span.clone()),
-                        new: (item.file.clone(), item.span.clone()),
-                    })?
-                }
-                else {
-                    self.talents.insert(s, item);
-                }
+    pub fn insert(&mut self, mut item: TalentItem) -> Result<(), LifeError> {
+        let index = item.index.unwrap_or(self.indexer);
+        match self.stories.get(&index) {
+            Some(old) => Err(LifeErrorKind::DuplicateError {
+                message: "Duplicate story id".to_string(),
+                old: (old.id.file.clone(), old.id.span.clone()),
+                new: (item.id.file, item.id.span),
+            })?,
+            None => {
+                item.index = Some(index);
+                self.stories.insert(index, item);
+                self.indexer = index.saturating_add(1);
             }
-            None => self.buffer.push(item),
         }
         Ok(())
     }
-
-    pub fn finalize(&mut self) {
-        for mut item in self.buffer.drain(..) {
-            // 不断尝试插入到不存在的编号
-            loop {
-                if self.talents.contains_key(&self.counter) {
-                    self.counter = self.counter.saturating_add(1);
-                    continue;
-                }
-                else {
-                    item.id = Some(self.counter);
-                    self.talents.insert(self.counter, item);
-                    break;
-                }
-            }
-        }
-    }
 }
 
-impl TalentItem {}
+impl TalentItem {
+    pub fn new(id: Identifier) -> Self {
+        Self { id, index: None, text: vec![] }
+    }
+}

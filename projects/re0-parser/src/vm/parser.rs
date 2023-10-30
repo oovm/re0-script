@@ -1,3 +1,5 @@
+#![allow(clippy::wrong_self_convention)]
+
 use std::{
     fmt::{Display, Formatter},
     fs::read_to_string,
@@ -8,7 +10,8 @@ use url::Url;
 
 use crate::{
     codegen::{
-        DescriptionStatementNode, IdStatementNode, PropertyStatementNode, StringNode, TraitItemNode, TraitStatementNode,
+        DescriptionStatementNode, EventGroupNode, EventItemNode, EventStatementNode, IdStatementNode, IdentifierNode,
+        PropertyStatementNode, StringNode, TraitItemNode, TraitStatementNode,
     },
     vm::talents::TalentItem,
     LifeError,
@@ -37,16 +40,48 @@ impl LifeVM {
         for x in root.statement {
             match x {
                 StatementNode::PropertyStatement(v) => self.property.load_property(v, file.clone())?,
-                StatementNode::TraitStatement(v) => self.talent.load_talent(v, file.clone())?,
+                StatementNode::TraitStatement(v) => self.talent.load_talent(v, &file)?,
                 StatementNode::TraitGroup(v) => {
                     for item in v.trait_statement {
-                        self.talent.load_talent(item, file.clone())?
+                        self.talent.load_talent(item, &file)?
                     }
                 }
+                StatementNode::EventGroup(v) => {}
+                StatementNode::EventStatement(v) => self.story.insert(v.as_story(&file)?)?,
                 StatementNode::Eos(_) => {}
             }
         }
         Ok(())
+    }
+}
+
+impl EventGroupNode {
+    pub fn as_story(self, file: &Option<Url>) -> Result<StoryItem, LifeError> {
+        let mut out = StoryItem::new(self.identifier.as_identifier(file));
+        // for item in self.event_statement {
+        //     item.mat
+        // }
+        Ok(out)
+    }
+}
+impl EventStatementNode {
+    pub fn as_story(self, file: &Option<Url>) -> Result<StoryItem, LifeError> {
+        let mut out = StoryItem::new(self.identifier.as_identifier(file));
+        for item in self.event_item {
+            match item {
+                EventItemNode::DescriptionStatement(_) => {}
+                EventItemNode::IdStatement(v) => {}
+                EventItemNode::OptionStatement(_) => {}
+                EventItemNode::RequirementStatement(_) => {}
+                EventItemNode::Eos(_) => {}
+            }
+        }
+        Ok(out)
+    }
+}
+impl IdentifierNode {
+    pub fn as_identifier(self, file: &Option<Url>) -> Identifier {
+        Identifier { name: self.text, file: file.clone(), span: self.span }
     }
 }
 
@@ -55,9 +90,7 @@ impl PropertyManager {
         let mut item = PropertyItem::new(Identifier { name: node.identifier.text, file, span: node.identifier.span });
         for x in node.property_item {
             match x {
-                PropertyItemNode::IdStatement(id) => {
-                    item.load_id(id)?;
-                }
+                PropertyItemNode::IdStatement(v) => item.index = v.as_index().ok(),
                 PropertyItemNode::DescriptionStatement(v) => item.load_text(v),
                 PropertyItemNode::RequirementStatement(_) => {}
                 PropertyItemNode::EnumerateStatement(_) => {}
@@ -71,12 +104,12 @@ impl PropertyManager {
     }
 }
 impl TalentManager {
-    fn load_talent(&mut self, node: TraitStatementNode, file: Option<Url>) -> Result<(), LifeError> {
-        let mut item = TalentItem { name: node.identifier.text, file, span: node.identifier.span, ..Default::default() };
+    fn load_talent(&mut self, node: TraitStatementNode, file: &Option<Url>) -> Result<(), LifeError> {
+        let mut item = TalentItem::new(node.identifier.as_identifier(file));
         for x in node.trait_item {
             match x {
                 TraitItemNode::DescriptionStatement(v) => item.load_text(v),
-                TraitItemNode::IdStatement(v) => item.load_id(v)?,
+                TraitItemNode::IdStatement(v) => item.index = v.as_index().ok(),
                 TraitItemNode::RequirementStatement(_) => {}
                 TraitItemNode::Eos(_) => {}
             }
@@ -88,23 +121,20 @@ impl TalentManager {
 }
 
 impl PropertyItem {
-    fn load_id(&mut self, node: IdStatementNode) -> Result<(), LifeError> {
-        let id = node.integer.text.parse::<usize>()?;
-        self.index = NonZeroUsize::new(id);
-        Ok(())
-    }
     fn load_text(&mut self, node: DescriptionStatementNode) {
         for x in node.string {
             self.text.push(x.to_string())
         }
     }
 }
-impl TalentItem {
-    fn load_id(&mut self, node: IdStatementNode) -> Result<(), LifeError> {
-        let id = node.integer.text.parse::<usize>()?;
-        self.id = NonZeroUsize::new(id);
-        Ok(())
+impl IdStatementNode {
+    pub fn as_index(&self) -> Result<NonZeroUsize, LifeError> {
+        let id = self.integer.text.parse::<usize>()?;
+        Ok(NonZeroUsize::new(id).unwrap())
     }
+}
+
+impl TalentItem {
     fn load_text(&mut self, node: DescriptionStatementNode) {
         for x in node.string {
             self.text.push(x.to_string())

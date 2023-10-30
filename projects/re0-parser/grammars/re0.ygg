@@ -8,10 +8,12 @@ union Statement {
     | PropertyStatement
     | TraitGroup
     | TraitStatement
+    | EventGroup
+    | EventStatement
     | EOS
 }
 class EOS {
-    /;/
+    /,;/
 }
 // === 定义属性 === ---------------------------------------------------------------------------------------------------------
 class PropertyStatement {
@@ -27,10 +29,16 @@ union PropertyItem {
     | EOS
 }
 class EnumerateStatement {
-    ^KW_ENUMERATE '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
+    ^KW_ENUMERATE '[' (variant:Identifier|^COMMA)* ']'
 }
 class OptionStatement {
-    ^KW_OPTIONS '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
+    ^KW_OPTIONS (
+        | '[' (OptionItem|^EOS)* ']'
+        | '{' (OptionItem|^EOS)* '}'
+    )
+}
+class OptionItem {
+    (weight:Integer ^COLON)? variant:Identifier
 }
 // === 定义天赋 === ---------------------------------------------------------------------------------------------------------
 class TraitGroup {
@@ -58,7 +66,7 @@ class EventStatement {
     ^KW_EVENT Identifier '{' EventItem* '}'
 }
 
-class EventItem {
+union EventItem {
     | IdStatement
     | DescriptionStatement
     | RequirementStatement
@@ -67,21 +75,24 @@ class EventItem {
 }
 
 class EventProperty {
-    Identifier (':' | '[') Expression (']' | '{' EventBlock '}' | EventBlock)?
+    Identifier
 }
 // === 通用属性 === ---------------------------------------------------------------------------------------------------------
 class IdStatement {
     ^KW_ID Integer
 }
 class DescriptionStatement {
-    ^KW_DESCRIPTION String? | '[' (String (^COMMA String)* ^COMMA?)? ']'
+    ^KW_DESCRIPTION String? | '[' (String|^EOS)* ']'
 }
 class RequirementStatement {
-    ^KW_REQUIREMENT '{'  '}'
+    ^KW_REQUIREMENT '{' (Expression|^EOS)* '}'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
-class Expression {
-    Atomic
+atomic class Expression {
+    Term (HIDE Infix ~ Term)
+}
+atomic class Term {
+    (Prefix HIDE)* Atomic (HIDE Suffix)*
 }
 
 @railway(false)
@@ -112,6 +123,11 @@ union Infix {
     | /不等于|!=/   #NE
     | /&&|且/      #And
     | /\|\||或/    #Or
+}
+@style(operator)
+@railway(false)
+union Suffix {
+    | /%/
 }
 
 atomic union String {
@@ -176,6 +192,7 @@ union Boolean {
 @railway(false)
 token {
     COMMA: /,/
+    COLON: /:/
 }
 
 @railway(false)

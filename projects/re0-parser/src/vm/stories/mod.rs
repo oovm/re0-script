@@ -56,6 +56,6 @@ impl StoryManager {
 
 impl StoryItem {
     pub fn new(id: Identifier) -> Self {
-        Self { id: id, index: None, text: vec![] }
+        Self { id, index: None, text: vec![] }
     }
 }

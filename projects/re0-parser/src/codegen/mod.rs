@@ -37,20 +37,24 @@ pub enum LifeRestartRule {
     PropertyItem,
     EnumerateStatement,
     OptionStatement,
+    OptionItem,
     TraitGroup,
     TraitStatement,
     TraitItem,
     TraitProperty,
+    EventGroup,
     EventStatement,
-    EventBlock,
+    EventItem,
     EventProperty,
     IdStatement,
     DescriptionStatement,
     RequirementStatement,
     Expression,
+    Term,
     Atomic,
     Prefix,
     Infix,
+    Suffix,
     String,
     StringRaw,
     StringRawText,
@@ -66,6 +70,7 @@ pub enum LifeRestartRule {
     Range,
     Boolean,
     COMMA,
+    COLON,
     KW_PROPERTY,
     KW_TRAIT_GROUP,
     KW_TRAIT,
@@ -96,20 +101,24 @@ impl YggdrasilRule for LifeRestartRule {
             Self::PropertyItem => "",
             Self::EnumerateStatement => "",
             Self::OptionStatement => "",
+            Self::OptionItem => "",
             Self::TraitGroup => "",
             Self::TraitStatement => "",
             Self::TraitItem => "",
             Self::TraitProperty => "",
+            Self::EventGroup => "",
             Self::EventStatement => "",
-            Self::EventBlock => "",
+            Self::EventItem => "",
             Self::EventProperty => "",
             Self::IdStatement => "",
             Self::DescriptionStatement => "",
             Self::RequirementStatement => "",
             Self::Expression => "",
+            Self::Term => "",
             Self::Atomic => "",
             Self::Prefix => "",
             Self::Infix => "",
+            Self::Suffix => "",
             Self::String => "",
             Self::StringRaw => "",
             Self::StringRawText => "",
@@ -125,6 +134,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::Range => "",
             Self::Boolean => "",
             Self::COMMA => "",
+            Self::COLON => "",
             Self::KW_PROPERTY => "",
             Self::KW_TRAIT_GROUP => "",
             Self::KW_TRAIT => "",
@@ -151,6 +161,8 @@ pub struct RootNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StatementNode {
     Eos(EosNode),
+    EventGroup(EventGroupNode),
+    EventStatement(EventStatementNode),
     PropertyStatement(PropertyStatementNode),
     TraitGroup(TraitGroupNode),
     TraitStatement(TraitStatementNode),
@@ -186,7 +198,14 @@ pub struct EnumerateStatementNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OptionStatementNode {
-    pub variant: Vec<IdentifierNode>,
+    pub option_item: Vec<OptionItemNode>,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct OptionItemNode {
+    pub variant: IdentifierNode,
+    pub weight: Option<IntegerNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -220,22 +239,30 @@ pub struct TraitPropertyNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct EventStatementNode {
-    pub event_block: EventBlockNode,
+pub struct EventGroupNode {
+    pub event_statement: Vec<EventStatementNode>,
     pub identifier: IdentifierNode,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct EventBlockNode {
-    pub event_property: Vec<EventPropertyNode>,
+pub struct EventStatementNode {
+    pub event_item: Vec<EventItemNode>,
+    pub identifier: IdentifierNode,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum EventItemNode {
+    DescriptionStatement(DescriptionStatementNode),
+    Eos(EosNode),
+    IdStatement(IdStatementNode),
+    OptionStatement(OptionStatementNode),
+    RequirementStatement(RequirementStatementNode),
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EventPropertyNode {
-    pub event_block: Option<EventBlockNode>,
-    pub expression: ExpressionNode,
     pub identifier: IdentifierNode,
     pub span: Range<usize>,
 }
@@ -254,12 +281,22 @@ pub struct DescriptionStatementNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RequirementStatementNode {
+    pub expression: Vec<ExpressionNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ExpressionNode {
+    pub infix: InfixNode,
+    pub term: Vec<TermNode>,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TermNode {
     pub atomic: AtomicNode,
+    pub prefix: Vec<PrefixNode>,
+    pub suffix: Vec<SuffixNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -289,6 +326,11 @@ pub enum InfixNode {
     LT,
     NE,
     Or,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum SuffixNode {
+    Suffix0,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -377,6 +419,11 @@ pub enum BooleanNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CommaNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ColonNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
