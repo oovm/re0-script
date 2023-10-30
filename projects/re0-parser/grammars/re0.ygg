@@ -1,0 +1,158 @@
+grammar Inference {
+
+}
+class Root {
+    Statement*
+}
+
+union Statement {
+    | PropertyStatement
+    | TraitStatement
+    | EventStatement
+}
+
+class PropertyStatement {
+    ^KW_ATTRIBUTE Identifier PropertyBlock
+}
+
+class PropertyBlock {
+    '{' '}'
+}
+
+class TraitStatement {
+    ^KW_TRAIT Identifier TraitBlock
+}
+
+class TraitBlock {
+    '{' TraitProperty* '}'
+}
+
+class TraitProperty {
+    Identifier ':' Atomic
+}
+
+class EventStatement {
+    ^KW_EVENT Identifier EventBlock
+}
+
+class EventBlock {
+    '{' EventProperty* '}'
+}
+
+class EventProperty {
+    Identifier (':' | '[') Expression (']' | '{' EventBlock '}' | EventBlock)?
+}
+
+union Expression {
+    | Identifier
+    | Integer
+    | StringRaw
+    | StringNormal
+    | Boolean
+    | RangeExact
+    | Range
+    | NegationExpression
+    | ComparisonExpression
+    | LogicalExpression
+}
+
+class NegationExpression {
+    '!' Expression
+}
+
+class ComparisonExpression {
+    Identifier ComparisonOperator Expression
+}
+
+class LogicalExpression {
+    Expression LogicalOperator Expression
+}
+
+union ComparisonOperator {
+    | '>'
+    | '>='
+    | '<'
+    | '<='
+    | '=='
+    | '!='
+}
+
+union LogicalOperator {
+    | '&&'
+    | '||'
+}
+
+atomic class StringRaw {
+    "'" StringRawText "'"
+}
+
+text class StringRawText {
+    /[^']*/
+}
+
+atomic class StringNormal {
+    '"' StringItem* '"'
+}
+
+union StringItem {
+    | EscapedUnicode
+    | EscapedCharacter
+    | TextAny
+}
+
+atomic class EscapedUnicode {
+    '\u{' HEX '}'
+}
+
+atomic class EscapedCharacter {
+    /\\./
+}
+
+text class HEX {
+    [0-9a-fA-F]{1,6}
+}
+
+text class TextAny {
+    /[^"\\]+/
+}
+
+text class Identifier {
+    /[_\p{XID_start}]\p{XID_continue}*/
+}
+
+text class Integer {
+    /0|[1-9][0-9]*/
+}
+
+class RangeExact {
+    '{' Integer '}'
+  }
+
+  class Range {
+    '{' (min: Integer)? ',' (max: Integer)? '}'
+  }
+
+  union Boolean {
+    | 'true' #True
+    | 'false' #False
+  }
+
+  @railroad(false)
+  @style(keyword)
+  token {
+    KW_ATTRIBUTE: /属性|属性名/
+    KW_TRAIT: /特质|特征/
+    KW_EVENT: /事件/
+  }
+
+  @railroad(false)
+  hide class WhiteSpace {
+    /\p{White_Space}+/
+  }
+
+  @style(comment)
+  @railroad(false)
+  hide class Comment {
+    | /\/\/[^\n\r]*/
+    | '/*' '*/'
+  }
