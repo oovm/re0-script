@@ -2,14 +2,14 @@ use super::*;
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Debug)]
-pub struct PropertyManager {
+pub struct StoryManager {
     /// 计数器
     indexer: NonZeroUsize,
-    properties: BTreeMap<NonZeroUsize, PropertyItem>,
+    stories: BTreeMap<NonZeroUsize, StoryItem>,
 }
 
 #[derive(Clone)]
-pub struct PropertyItem {
+pub struct StoryItem {
     pub id: Identifier,
     /// 属性 ID, 用于快速查询
     pub index: Option<NonZeroUsize>,
@@ -17,9 +17,9 @@ pub struct PropertyItem {
     pub text: Vec<String>,
 }
 
-impl Debug for PropertyItem {
+impl Debug for StoryItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let w = &mut f.debug_struct("PropertyItem");
+        let w = &mut f.debug_struct("StoryItem");
         w.field("name", &self.id.name);
         if let Some(s) = self.index {
             w.field("id", &s);
@@ -29,24 +29,24 @@ impl Debug for PropertyItem {
     }
 }
 
-impl Default for PropertyManager {
+impl Default for StoryManager {
     fn default() -> Self {
-        PropertyManager { indexer: unsafe { NonZeroUsize::new_unchecked(1) }, properties: Default::default() }
+        StoryManager { indexer: unsafe { NonZeroUsize::new_unchecked(1) }, stories: Default::default() }
     }
 }
 
-impl PropertyManager {
-    pub fn insert(&mut self, mut item: PropertyItem) -> Result<(), LifeError> {
+impl StoryManager {
+    pub fn insert(&mut self, mut item: StoryItem) -> Result<(), LifeError> {
         let index = item.index.unwrap_or(self.indexer);
-        match self.properties.get(&index) {
+        match self.stories.get(&index) {
             Some(old) => Err(LifeErrorKind::DuplicateError {
-                message: "Duplicate property id".to_string(),
+                message: "Duplicate story id".to_string(),
                 old: (old.id.file.clone(), old.id.span.clone()),
                 new: (item.id.file, item.id.span),
             })?,
             None => {
                 item.index = Some(index);
-                self.properties.insert(index, item);
+                self.stories.insert(index, item);
                 self.indexer = index.saturating_add(1);
             }
         }
@@ -54,7 +54,7 @@ impl PropertyManager {
     }
 }
 
-impl PropertyItem {
+impl StoryItem {
     pub fn new(id: Identifier) -> Self {
         Self { id: id, index: None, text: vec![] }
     }

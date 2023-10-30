@@ -2,13 +2,16 @@ use std::{num::ParseIntError, ops::Range};
 
 use url::Url;
 
+/// The result type of life restart
 pub type LifeResult<T> = std::result::Result<T, LifeError>;
 
+/// Error types for life restart
 #[derive(Clone, Debug)]
 pub struct LifeError {
     kind: Box<LifeErrorKind>,
 }
 
+/// The enumerate type of all errors
 #[derive(Clone, Debug)]
 pub enum LifeErrorKind {
     RuntimeError { message: String },
@@ -17,6 +20,7 @@ pub enum LifeErrorKind {
 }
 
 impl LifeError {
+    /// Get the kind of the error
     pub fn kind(&self) -> &LifeErrorKind {
         &self.kind
     }

@@ -46,17 +46,24 @@ union TraitItem {
     | RequirementStatement
     | EOS
 }
-
 class TraitProperty {
     Identifier ':' Atomic
 }
-
-class EventStatement {
-    ^KW_EVENT Identifier EventBlock
+// === 事件 === ---------------------------------------------------------------------------------------------------------
+class EventGroup {
+    ^KW_EVENT_GROUP Identifier '{' EventStatement* '}'
 }
 
-class EventBlock {
-    '{' EventProperty* '}'
+class EventStatement {
+    ^KW_EVENT Identifier '{' EventItem* '}'
+}
+
+class EventItem {
+    | IdStatement
+    | DescriptionStatement
+    | RequirementStatement
+    | OptionStatement
+    | EOS
 }
 
 class EventProperty {
@@ -177,8 +184,8 @@ token {
     KW_PROPERTY: /属性|property/
     KW_TRAIT_GROUP: /特质组|特征组|天赋组|(trait|talent)s|(trait|talent)-group/
     KW_TRAIT: /特质|特征|天赋|trait|talent/
-    KW_EVENT_GROUP: /事件组|events|event-group/
-    KW_EVENT: /事件|event/
+    KW_EVENT_GROUP: /故事组|事件组|events|event-group/
+    KW_EVENT: /故事|事件|event/
     KW_ID:/编号|[Ii][Dd]/
     // description
     KW_DESCRIPTION: /动态文本|动态描述|文本|描述|details?/

@@ -119,13 +119,3 @@ impl Display for StringNode {
         Ok(())
     }
 }
-
-fn test_classes() {
-    let text = r##"text class RegexInner {
-    /([^\\\\\\/]|\\\\.)+/
-}"##;
-    let cst = LifeRestartParser::parse_cst(text, LifeRestartRule::Root).unwrap();
-    println!("Short Form:\n{}", cst);
-    let ast = RootNode::from_str(text).unwrap();
-    println!("{ast:#?}")
-}

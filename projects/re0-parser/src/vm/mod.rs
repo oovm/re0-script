@@ -1,6 +1,5 @@
-use crate::codegen::{LifeRestartParser, LifeRestartRule, PropertyItemNode, RootNode, StatementNode};
+use crate::codegen::{PropertyItemNode, RootNode, StatementNode};
 use std::{collections::BTreeMap, num::NonZeroUsize, ops::Range, str::FromStr};
-use yggdrasil_rt::YggdrasilParser;
 
 use crate::errors::LifeErrorKind;
 use url::Url;
@@ -8,15 +7,20 @@ use url::Url;
 pub use self::{
     identifier::Identifier,
     properties::{PropertyItem, PropertyManager},
+    stories::{StoryItem, StoryManager},
+    talents::{TalentItem, TalentManager},
 };
-use crate::{vm::talents::TalentManager, LifeError};
+use crate::LifeError;
 mod identifier;
 mod parser;
 mod properties;
+mod stories;
 mod talents;
 
+/// All data of life restart game
 #[derive(Clone, Debug, Default)]
 pub struct LifeVM {
     property: PropertyManager,
     talent: TalentManager,
+    story: StoryManager,
 }
