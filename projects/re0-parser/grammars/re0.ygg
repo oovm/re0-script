@@ -6,6 +6,7 @@ class Root {
 }
 union Statement {
     | PropertyStatement
+    | TraitGroup
     | TraitStatement
 }
 // === 定义属性 === ---------------------------------------------------------------------------------------------------------
@@ -16,8 +17,12 @@ class PropertyStatement {
 union PropertyItem {
     | IdStatement
     | DescriptionStatement
+    | RequirementStatement
 }
 // === 定义天赋 === ---------------------------------------------------------------------------------------------------------
+class TraitGroup {
+    TraitStatement*
+}
 class TraitStatement {
     ^KW_TRAIT Identifier '{' TraitItem* '}'
 }
@@ -25,6 +30,7 @@ class TraitStatement {
 union TraitItem {
     | IdStatement
     | DescriptionStatement
+    | RequirementStatement
 }
 
 class TraitProperty {
@@ -47,7 +53,10 @@ class IdStatement {
     ^KW_ID Integer
 }
 class DescriptionStatement {
-    ^KW_DESCRIPTION String? | '[' (String (COMMA String)? COMMA?)? ']'
+    ^KW_DESCRIPTION String? | '(' (String (COMMA String)? COMMA?)? ')'
+}
+class RequirementStatement {
+    ^KW_REQUIREMENT '{'  '}'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 class Expression {
