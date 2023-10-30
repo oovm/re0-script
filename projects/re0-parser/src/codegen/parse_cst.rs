@@ -7,16 +7,18 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::PropertyStatement => parse_property_statement(state),
         LifeRestartRule::PropertyItem => parse_property_item(state),
         LifeRestartRule::TraitStatement => parse_trait_statement(state),
-        LifeRestartRule::TraitBlock => parse_trait_block(state),
+        LifeRestartRule::TraitItem => parse_trait_item(state),
         LifeRestartRule::TraitProperty => parse_trait_property(state),
         LifeRestartRule::EventStatement => parse_event_statement(state),
         LifeRestartRule::EventBlock => parse_event_block(state),
         LifeRestartRule::EventProperty => parse_event_property(state),
         LifeRestartRule::IdStatement => parse_id_statement(state),
+        LifeRestartRule::DescriptionStatement => parse_description_statement(state),
         LifeRestartRule::Expression => parse_expression(state),
         LifeRestartRule::Atomic => parse_atomic(state),
         LifeRestartRule::Prefix => parse_prefix(state),
         LifeRestartRule::Infix => parse_infix(state),
+        LifeRestartRule::String => parse_string(state),
         LifeRestartRule::StringRaw => parse_string_raw(state),
         LifeRestartRule::StringRawText => parse_string_raw_text(state),
         LifeRestartRule::StringNormal => parse_string_normal(state),
@@ -30,14 +32,14 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::RangeExact => parse_range_exact(state),
         LifeRestartRule::Range => parse_range(state),
         LifeRestartRule::Boolean => parse_boolean(state),
+        LifeRestartRule::COMMA => parse_comma(state),
         LifeRestartRule::KW_PROPERTY => parse_kw_property(state),
         LifeRestartRule::KW_TRAIT_GROUP => parse_kw_trait_group(state),
         LifeRestartRule::KW_TRAIT => parse_kw_trait(state),
         LifeRestartRule::KW_EVENT_GROUP => parse_kw_event_group(state),
         LifeRestartRule::KW_EVENT => parse_kw_event(state),
         LifeRestartRule::KW_ID => parse_kw_id(state),
-        LifeRestartRule::KW_TEXT => parse_kw_text(state),
-        LifeRestartRule::KW_TEXT_DYNAMIC => parse_kw_text_dynamic(state),
+        LifeRestartRule::KW_DESCRIPTION => parse_kw_description(state),
         LifeRestartRule::WhiteSpace => parse_white_space(state),
         LifeRestartRule::Comment => parse_comment(state),
         LifeRestartRule::HiddenText => unreachable!(),
@@ -52,7 +54,7 @@ fn parse_root(state: Input) -> Output {
 #[inline]
 fn parse_statement(state: Input) -> Output {
     state.rule(LifeRestartRule::Statement, |s| {
-        Err(s).or_else(|s|parse_property_statement(s).and_then(|s| s.tag_node("property_statement")))
+        Err(s).or_else(|s|parse_property_statement(s).and_then(|s| s.tag_node("property_statement"))).or_else(|s|parse_trait_statement(s).and_then(|s| s.tag_node("trait_statement")))
     })
 }
 #[inline]
@@ -64,19 +66,19 @@ fn parse_property_statement(state: Input) -> Output {
 #[inline]
 fn parse_property_item(state: Input) -> Output {
     state.rule(LifeRestartRule::PropertyItem, |s| {
-        Err(s).or_else(|s|parse_id_statement(s).and_then(|s| s.tag_node("id_statement")))
+        Err(s).or_else(|s|parse_id_statement(s).and_then(|s| s.tag_node("id_statement"))).or_else(|s|parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
     })
 }
 #[inline]
 fn parse_trait_statement(state: Input) -> Output {
     state.rule(LifeRestartRule::TraitStatement, |s| {
-        s.sequence(|s|Ok(s).and_then(|s|parse_kw_trait(s)).and_then(|s|builtin_ignore(s)).and_then(|s|parse_identifier(s).and_then(|s| s.tag_node("identifier"))).and_then(|s|builtin_ignore(s)).and_then(|s|parse_trait_block(s).and_then(|s| s.tag_node("trait_block"))))
+        s.sequence(|s|Ok(s).and_then(|s|parse_kw_trait(s)).and_then(|s|builtin_ignore(s)).and_then(|s|parse_identifier(s).and_then(|s| s.tag_node("identifier"))).and_then(|s|builtin_ignore(s)).and_then(|s|builtin_text(s,"{",false)).and_then(|s|builtin_ignore(s)).and_then(|s|s.repeat(0..4294967295,|s|s.sequence(|s|Ok(s).and_then(|s|builtin_ignore(s)).and_then(|s|parse_trait_item(s).and_then(|s| s.tag_node("trait_item")))))).and_then(|s|builtin_ignore(s)).and_then(|s|builtin_text(s,"}",false)))
     })
 }
 #[inline]
-fn parse_trait_block(state: Input) -> Output {
-    state.rule(LifeRestartRule::TraitBlock, |s| {
-        s.sequence(|s|Ok(s).and_then(|s|builtin_text(s,"{",false)).and_then(|s|builtin_ignore(s)).and_then(|s|s.repeat(0..4294967295,|s|s.sequence(|s|Ok(s).and_then(|s|builtin_ignore(s)).and_then(|s|parse_trait_property(s).and_then(|s| s.tag_node("trait_property")))))).and_then(|s|builtin_ignore(s)).and_then(|s|builtin_text(s,"}",false)))
+fn parse_trait_item(state: Input) -> Output {
+    state.rule(LifeRestartRule::TraitItem, |s| {
+        Err(s).or_else(|s|parse_id_statement(s).and_then(|s| s.tag_node("id_statement"))).or_else(|s|parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
     })
 }
 #[inline]
@@ -106,7 +108,13 @@ fn parse_event_property(state: Input) -> Output {
 #[inline]
 fn parse_id_statement(state: Input) -> Output {
     state.rule(LifeRestartRule::IdStatement, |s| {
-        s.sequence(|s|Ok(s).and_then(|s|parse_kw_id(s)).and_then(|s|builtin_ignore(s)).and_then(|s|parse_identifier(s).and_then(|s| s.tag_node("identifier"))).and_then(|s|builtin_ignore(s)).and_then(|s|parse_integer(s).and_then(|s| s.tag_node("integer"))))
+        s.sequence(|s|Ok(s).and_then(|s|parse_kw_id(s)).and_then(|s|builtin_ignore(s)).and_then(|s|parse_integer(s).and_then(|s| s.tag_node("integer"))))
+    })
+}
+#[inline]
+fn parse_description_statement(state: Input) -> Output {
+    state.rule(LifeRestartRule::DescriptionStatement, |s| {
+        Err(s).or_else(|s|s.sequence(|s|Ok(s).and_then(|s|parse_kw_description(s)).and_then(|s|builtin_ignore(s)).and_then(|s|parse_string(s).and_then(|s| s.tag_node("string"))))).or_else(|s|s.sequence(|s|Ok(s).and_then(|s|builtin_text(s,"[",false)).and_then(|s|builtin_ignore(s)).and_then(|s|s.optional(|s|s.sequence(|s|Ok(s).and_then(|s|parse_string(s).and_then(|s| s.tag_node("string"))).and_then(|s|builtin_ignore(s)).and_then(|s|s.optional(|s|s.sequence(|s|Ok(s).and_then(|s|parse_comma(s).and_then(|s| s.tag_node("comma"))).and_then(|s|builtin_ignore(s)).and_then(|s|parse_string(s).and_then(|s| s.tag_node("string")))))).and_then(|s|builtin_ignore(s)).and_then(|s|s.optional(|s|parse_comma(s).and_then(|s| s.tag_node("comma"))))))).and_then(|s|builtin_ignore(s)).and_then(|s|builtin_text(s,"]",false))))
     })
 }
 #[inline]
@@ -131,6 +139,12 @@ fn parse_prefix(state: Input) -> Output {
 fn parse_infix(state: Input) -> Output {
     state.rule(LifeRestartRule::Infix, |s| {
         Err(s).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(大于|>)").unwrap())}).and_then(|s| s.tag_node("gt"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(大于等于|>=)").unwrap())}).and_then(|s| s.tag_node("geq"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(小于|<)").unwrap())}).and_then(|s| s.tag_node("lt"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(小于等于|<=)").unwrap())}).and_then(|s| s.tag_node("leq"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(为|等于|==)").unwrap())}).and_then(|s| s.tag_node("eq"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(不等于|!=)").unwrap())}).and_then(|s| s.tag_node("ne"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(&&|且)").unwrap())}).and_then(|s| s.tag_node("and"))).or_else(|s|builtin_regex(s,{static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(\\|\\||或)").unwrap())}).and_then(|s| s.tag_node("or")))
+    })
+}
+#[inline]
+fn parse_string(state: Input) -> Output {
+    state.rule(LifeRestartRule::String, |s| {
+        Err(s).or_else(|s|parse_string_raw(s).and_then(|s| s.tag_node("string_raw")))
     })
 }
 #[inline]
@@ -212,6 +226,12 @@ fn parse_boolean(state: Input) -> Output {
     })
 }
 #[inline]
+fn parse_comma(state: Input) -> Output {
+    state.rule(LifeRestartRule::COMMA, |s| {
+        s.match_regex({static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(,)").unwrap())})
+    })
+}
+#[inline]
 fn parse_kw_property(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_PROPERTY, |s| {
         s.match_regex({static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(属性|property)").unwrap())})
@@ -248,15 +268,9 @@ fn parse_kw_id(state: Input) -> Output {
     })
 }
 #[inline]
-fn parse_kw_text(state: Input) -> Output {
-    state.rule(LifeRestartRule::KW_TEXT, |s| {
-        s.match_regex({static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(文本|描述|details?)").unwrap())})
-    })
-}
-#[inline]
-fn parse_kw_text_dynamic(state: Input) -> Output {
-    state.rule(LifeRestartRule::KW_TEXT_DYNAMIC, |s| {
-        s.match_regex({static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(动态文本|动态描述)").unwrap())})
+fn parse_kw_description(state: Input) -> Output {
+    state.rule(LifeRestartRule::KW_DESCRIPTION, |s| {
+        s.match_regex({static REGEX:OnceLock<Regex>=OnceLock::new();REGEX.get_or_init(||Regex::new("^(动态文本|动态描述|文本|描述|details?)").unwrap())})
     })
 }
 #[inline]

@@ -35,16 +35,18 @@ pub enum LifeRestartRule {
     PropertyStatement,
     PropertyItem,
     TraitStatement,
-    TraitBlock,
+    TraitItem,
     TraitProperty,
     EventStatement,
     EventBlock,
     EventProperty,
     IdStatement,
+    DescriptionStatement,
     Expression,
     Atomic,
     Prefix,
     Infix,
+    String,
     StringRaw,
     StringRawText,
     StringNormal,
@@ -58,14 +60,14 @@ pub enum LifeRestartRule {
     RangeExact,
     Range,
     Boolean,
+    COMMA,
     KW_PROPERTY,
     KW_TRAIT_GROUP,
     KW_TRAIT,
     KW_EVENT_GROUP,
     KW_EVENT,
     KW_ID,
-    KW_TEXT,
-    KW_TEXT_DYNAMIC,
+    KW_DESCRIPTION,
     WhiteSpace,
     Comment,
     /// Label for unnamed text literal
@@ -84,16 +86,18 @@ impl YggdrasilRule for LifeRestartRule {
             Self::PropertyStatement => "",
             Self::PropertyItem => "",
             Self::TraitStatement => "",
-            Self::TraitBlock => "",
+            Self::TraitItem => "",
             Self::TraitProperty => "",
             Self::EventStatement => "",
             Self::EventBlock => "",
             Self::EventProperty => "",
             Self::IdStatement => "",
+            Self::DescriptionStatement => "",
             Self::Expression => "",
             Self::Atomic => "",
             Self::Prefix => "",
             Self::Infix => "",
+            Self::String => "",
             Self::StringRaw => "",
             Self::StringRawText => "",
             Self::StringNormal => "",
@@ -107,14 +111,14 @@ impl YggdrasilRule for LifeRestartRule {
             Self::RangeExact => "",
             Self::Range => "",
             Self::Boolean => "",
+            Self::COMMA => "",
             Self::KW_PROPERTY => "",
             Self::KW_TRAIT_GROUP => "",
             Self::KW_TRAIT => "",
             Self::KW_EVENT_GROUP => "",
             Self::KW_EVENT => "",
             Self::KW_ID => "",
-            Self::KW_TEXT => "",
-            Self::KW_TEXT_DYNAMIC => "",
+            Self::KW_DESCRIPTION => "",
             Self::WhiteSpace => "",
             Self::Comment => "",
             _ => "",
@@ -131,6 +135,7 @@ pub struct RootNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StatementNode {
     PropertyStatement(PropertyStatementNode),
+    TraitStatement(TraitStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -142,20 +147,21 @@ pub struct PropertyStatementNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PropertyItemNode {
+    DescriptionStatement(DescriptionStatementNode),
     IdStatement(IdStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TraitStatementNode {
     pub identifier: IdentifierNode,
-    pub trait_block: TraitBlockNode,
+    pub trait_item: Vec<TraitItemNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct TraitBlockNode {
-    pub trait_property: Vec<TraitPropertyNode>,
-    pub span: Range<usize>,
+pub enum TraitItemNode {
+    DescriptionStatement(DescriptionStatementNode),
+    IdStatement(IdStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -188,8 +194,14 @@ pub struct EventPropertyNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IdStatementNode {
-    pub identifier: IdentifierNode,
     pub integer: IntegerNode,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct DescriptionStatementNode {
+    pub comma: Vec<CommaNode>,
+    pub string: Vec<StringNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -225,6 +237,11 @@ pub enum InfixNode {
     LT,
     NE,
     Or,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum StringNode {
+    StringRaw(StringRawNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -307,6 +324,11 @@ pub enum BooleanNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct CommaNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwPropertyNode {
     pub span: Range<usize>,
 }
@@ -337,12 +359,7 @@ pub struct KwIdNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct KwTextNode {
-    pub span: Range<usize>,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct KwTextDynamicNode {
+pub struct KwDescriptionNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]

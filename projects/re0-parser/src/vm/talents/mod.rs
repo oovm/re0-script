@@ -3,8 +3,8 @@ use super::*;
 #[derive(Clone, Debug)]
 pub struct TalentManager {
     /// 从一开始的属性
-    property_id: NonZeroUsize,
-    properties: BTreeMap<NonZeroUsize, TalentItem>,
+    counter: NonZeroUsize,
+    talents: BTreeMap<NonZeroUsize, TalentItem>,
     // 暂时没分配到 id 的属性
     buffer: Vec<TalentItem>,
 }
@@ -19,7 +19,7 @@ pub struct TalentItem {
 
 impl Default for TalentManager {
     fn default() -> Self {
-        TalentManager { property_id: unsafe { NonZeroUsize::new_unchecked(1) }, properties: Default::default(), buffer: vec![] }
+        TalentManager { counter: unsafe { NonZeroUsize::new_unchecked(1) }, talents: Default::default(), buffer: vec![] }
     }
 }
 
@@ -33,15 +33,15 @@ impl TalentManager {
     pub fn insert(&mut self, item: TalentItem) -> Result<(), LifeError> {
         match item.id {
             Some(s) => {
-                if self.properties.contains_key(&s) {
+                if self.talents.contains_key(&s) {
                     Err(LifeErrorKind::DuplicateError {
-                        message: "Duplicate property id".to_string(),
-                        old: (self.properties.get(&s).unwrap().file.clone(), self.properties.get(&s).unwrap().span.clone()),
+                        message: "Duplicate talent id".to_string(),
+                        old: (self.talents.get(&s).unwrap().file.clone(), self.talents.get(&s).unwrap().span.clone()),
                         new: (item.file.clone(), item.span.clone()),
                     })?
                 }
                 else {
-                    self.properties.insert(s, item);
+                    self.talents.insert(s, item);
                 }
             }
             None => self.buffer.push(item),
@@ -53,13 +53,13 @@ impl TalentManager {
         for mut item in self.buffer.drain(..) {
             // 不断尝试插入到不存在的编号
             loop {
-                if self.properties.contains_key(&self.property_id) {
-                    self.property_id = self.property_id.saturating_add(1);
+                if self.talents.contains_key(&self.counter) {
+                    self.counter = self.counter.saturating_add(1);
                     continue;
                 }
                 else {
-                    item.id = Some(self.property_id);
-                    self.properties.insert(self.property_id, item);
+                    item.id = Some(self.counter);
+                    self.talents.insert(self.counter, item);
                     break;
                 }
             }

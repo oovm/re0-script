@@ -4,25 +4,27 @@ grammar LifeRestart {
 class Root {
     Statement* EOI
 }
-
 union Statement {
     | PropertyStatement
+    | TraitStatement
 }
-
+// === 定义属性 === ---------------------------------------------------------------------------------------------------------
 class PropertyStatement {
     ^KW_PROPERTY Identifier '{' PropertyItem* '}'
 }
 
 union PropertyItem {
     | IdStatement
+    | DescriptionStatement
 }
-
+// === 定义天赋 === ---------------------------------------------------------------------------------------------------------
 class TraitStatement {
-    ^KW_TRAIT Identifier TraitBlock
+    ^KW_TRAIT Identifier '{' TraitItem* '}'
 }
 
-class TraitBlock {
-    '{' TraitProperty* '}'
+union TraitItem {
+    | IdStatement
+    | DescriptionStatement
 }
 
 class TraitProperty {
@@ -44,7 +46,9 @@ class EventProperty {
 class IdStatement {
     ^KW_ID Integer
 }
-
+class DescriptionStatement {
+    ^KW_DESCRIPTION String | '[' (String (COMMA String)? COMMA?)? ']'
+}
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 class Expression {
     Atomic
@@ -74,6 +78,10 @@ union Infix {
     | /不等于|!=/   #NE
     | /&&|且/      #And
     | /\|\||或/    #Or
+}
+
+atomic union String {
+    | StringRaw
 }
 
 atomic class StringRaw {
@@ -132,6 +140,11 @@ union Boolean {
 }
 
 @railway(false)
+token {
+    COMMA: /,/
+}
+
+@railway(false)
 @style(keyword)
 token {
     KW_PROPERTY: /属性|property/
@@ -140,8 +153,8 @@ token {
     KW_EVENT_GROUP: /事件组|events|event-group/
     KW_EVENT: /事件|event/
     KW_ID:/编号|[Ii][Dd]/
-    KW_TEXT: /文本|描述|details?/
-    KW_TEXT_DYNAMIC: /动态文本|动态描述/
+    // description
+    KW_DESCRIPTION: /动态文本|动态描述|文本|描述|details?/
 }
 
 @railway(false)

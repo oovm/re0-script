@@ -2,8 +2,8 @@ use super::*;
 
 #[derive(Clone, Debug)]
 pub struct PropertyManager {
-    /// 从一开始的属性
-    property_id: NonZeroUsize,
+    /// 计数器
+    counter: NonZeroUsize,
     properties: BTreeMap<NonZeroUsize, PropertyItem>,
     // 暂时没分配到 id 的属性
     buffer: Vec<PropertyItem>,
@@ -19,11 +19,7 @@ pub struct PropertyItem {
 
 impl Default for PropertyManager {
     fn default() -> Self {
-        PropertyManager {
-            property_id: unsafe { NonZeroUsize::new_unchecked(1) },
-            properties: Default::default(),
-            buffer: vec![],
-        }
+        PropertyManager { counter: unsafe { NonZeroUsize::new_unchecked(1) }, properties: Default::default(), buffer: vec![] }
     }
 }
 
@@ -57,13 +53,13 @@ impl PropertyManager {
         for mut item in self.buffer.drain(..) {
             // 不断尝试插入到不存在的编号
             loop {
-                if self.properties.contains_key(&self.property_id) {
-                    self.property_id = self.property_id.saturating_add(1);
+                if self.properties.contains_key(&self.counter) {
+                    self.counter = self.counter.saturating_add(1);
                     continue;
                 }
                 else {
-                    item.id = Some(self.property_id);
-                    self.properties.insert(self.property_id, item);
+                    item.id = Some(self.counter);
+                    self.properties.insert(self.counter, item);
                     break;
                 }
             }
