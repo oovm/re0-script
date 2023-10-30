@@ -13,6 +13,7 @@ pub struct TalentManager {
 pub struct TalentItem {
     pub name: String,
     pub id: Option<NonZeroUsize>,
+    pub text: Vec<String>,
     pub file: Option<Url>,
     pub span: Range<usize>,
 }
@@ -25,7 +26,7 @@ impl Default for TalentManager {
 
 impl Default for TalentItem {
     fn default() -> Self {
-        Self { name: "".to_string(), id: None, file: None, span: Default::default() }
+        Self { name: "".to_string(), id: None, text: vec![], file: None, span: Default::default() }
     }
 }
 

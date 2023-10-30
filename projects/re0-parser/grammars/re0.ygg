@@ -47,7 +47,7 @@ class IdStatement {
     ^KW_ID Integer
 }
 class DescriptionStatement {
-    ^KW_DESCRIPTION String | '[' (String (COMMA String)? COMMA?)? ']'
+    ^KW_DESCRIPTION String? | '[' (String (COMMA String)? COMMA?)? ']'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 class Expression {
@@ -155,6 +155,7 @@ token {
     KW_ID:/编号|[Ii][Dd]/
     // description
     KW_DESCRIPTION: /动态文本|动态描述|文本|描述|details?/
+    KW_REQUIREMENT: /出现要求|要求|requires/
 }
 
 @railway(false)

@@ -11,9 +11,15 @@ pub struct PropertyManager {
 
 #[derive(Clone, Debug)]
 pub struct PropertyItem {
+    /// 属性名字, 用于动态查询
     pub name: String,
+    /// 属性 ID, 用于快速查询
     pub id: Option<NonZeroUsize>,
+    /// 描述文本
+    pub text: Vec<String>,
+    /// 定义所在文件
     pub file: Option<Url>,
+    /// 定义所在位置
     pub span: Range<usize>,
 }
 
@@ -25,7 +31,7 @@ impl Default for PropertyManager {
 
 impl Default for PropertyItem {
     fn default() -> Self {
-        Self { name: "".to_string(), id: None, file: None, span: Default::default() }
+        Self { name: "".to_string(), id: None, text: vec![], file: None, span: Default::default() }
     }
 }
 
