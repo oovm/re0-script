@@ -28,6 +28,7 @@ impl YggdrasilNode for StatementNode {
 
     fn get_range(&self) -> Option<Range<usize>> {
         match self {
+            Self::Eos(s) => s.get_range(),
             Self::PropertyStatement(s) => s.get_range(),
             Self::TraitGroup(s) => s.get_range(),
             Self::TraitStatement(s) => s.get_range(),
@@ -35,6 +36,9 @@ impl YggdrasilNode for StatementNode {
     }
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
+        if let Ok(s) = pair.take_tagged_one::<EosNode>(Cow::Borrowed("eos")) {
+            return Ok(Self::Eos(s));
+        }
         if let Ok(s) = pair.take_tagged_one::<PropertyStatementNode>(Cow::Borrowed("property_statement")) {
             return Ok(Self::PropertyStatement(s));
         }
@@ -156,7 +160,6 @@ impl YggdrasilNode for EnumerateStatementNode {
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
         Ok(Self {
-            identifier: pair.take_tagged_one::<IdentifierNode>(Cow::Borrowed("identifier"))?,
             variant: pair.take_tagged_items::<IdentifierNode>(Cow::Borrowed("variant")).collect::<Result<Vec<_>, _>>()?,
             span: Range { start: _span.start() as usize, end: _span.end() as usize },
         })
@@ -180,7 +183,6 @@ impl YggdrasilNode for OptionStatementNode {
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
         Ok(Self {
-            identifier: pair.take_tagged_one::<IdentifierNode>(Cow::Borrowed("identifier"))?,
             variant: pair.take_tagged_items::<IdentifierNode>(Cow::Borrowed("variant")).collect::<Result<Vec<_>, _>>()?,
             span: Range { start: _span.start() as usize, end: _span.end() as usize },
         })

@@ -1,6 +1,4 @@
-use std::{path::Path, str::FromStr};
-
-use yggdrasil_rt::YggdrasilParser;
+use std::path::Path;
 
 use re0_parser::vm::LifeVM;
 
@@ -10,8 +8,17 @@ fn ready() {
 }
 
 #[test]
-fn test_classes() {
+fn test_vm() {
     let mut vm = LifeVM::default();
-    vm.load_local(&Path::new("tests/属性.re0"));
+    vm.load_local(&Path::new("tests/属性.re0")).unwrap();
     println!("{vm:#?}")
 }
+
+// #[test]
+// fn test_options() {
+//     let text = r##"选项[]"##;
+//     let cst = LifeRestartParser::parse_cst(text, LifeRestartRule::OptionStatement).unwrap();
+//     println!("Short Form:\n{}", cst);
+//     let ast = OptionStatementNode::from_str(text).unwrap();
+//     println!("{ast:#?}")
+// }

@@ -8,6 +8,7 @@ union Statement {
     | PropertyStatement
     | TraitGroup
     | TraitStatement
+    | EOS
 }
 class EOS {
     /;/
@@ -26,10 +27,10 @@ union PropertyItem {
     | EOS
 }
 class EnumerateStatement {
-    ^KW_ENUMERATE Identifier '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
+    ^KW_ENUMERATE '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
 }
 class OptionStatement {
-    ^KW_OPTIONS Identifier '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
+    ^KW_OPTIONS '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
 }
 // === 定义天赋 === ---------------------------------------------------------------------------------------------------------
 class TraitGroup {

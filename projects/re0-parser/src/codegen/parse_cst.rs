@@ -79,6 +79,7 @@ fn parse_statement(state: Input) -> Output {
             .or_else(|s| parse_property_statement(s).and_then(|s| s.tag_node("property_statement")))
             .or_else(|s| parse_trait_group(s).and_then(|s| s.tag_node("trait_group")))
             .or_else(|s| parse_trait_statement(s).and_then(|s| s.tag_node("trait_statement")))
+            .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
     })
 }
 #[inline]
@@ -134,8 +135,6 @@ fn parse_enumerate_statement(state: Input) -> Output {
             Ok(s)
                 .and_then(|s| parse_kw_enumerate(s))
                 .and_then(|s| builtin_ignore(s))
-                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
-                .and_then(|s| builtin_ignore(s))
                 .and_then(|s| builtin_text(s, "[", false))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| {
@@ -179,8 +178,6 @@ fn parse_option_statement(state: Input) -> Output {
         s.sequence(|s| {
             Ok(s)
                 .and_then(|s| parse_kw_options(s))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| builtin_text(s, "[", false))
                 .and_then(|s| builtin_ignore(s))

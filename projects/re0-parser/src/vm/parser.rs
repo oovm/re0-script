@@ -43,6 +43,7 @@ impl LifeVM {
                         self.talent.load_talent(item, file.clone())?
                     }
                 }
+                StatementNode::Eos(_) => {}
             }
         }
         Ok(())
@@ -51,7 +52,7 @@ impl LifeVM {
 
 impl PropertyManager {
     fn load_property(&mut self, node: PropertyStatementNode, file: Option<Url>) -> Result<(), LifeError> {
-        let mut item = PropertyItem { name: node.identifier.text, file, span: node.identifier.span, ..Default::default() };
+        let mut item = PropertyItem::new(Identifier { name: node.identifier.text, file, span: node.identifier.span });
         for x in node.property_item {
             match x {
                 PropertyItemNode::IdStatement(id) => {
@@ -89,7 +90,7 @@ impl TalentManager {
 impl PropertyItem {
     fn load_id(&mut self, node: IdStatementNode) -> Result<(), LifeError> {
         let id = node.integer.text.parse::<usize>()?;
-        self.id = NonZeroUsize::new(id);
+        self.index = NonZeroUsize::new(id);
         Ok(())
     }
     fn load_text(&mut self, node: DescriptionStatementNode) {

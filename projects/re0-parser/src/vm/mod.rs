@@ -5,9 +5,12 @@ use yggdrasil_rt::YggdrasilParser;
 use crate::errors::LifeErrorKind;
 use url::Url;
 
-pub use self::properties::{PropertyItem, PropertyManager};
+pub use self::{
+    identifier::Identifier,
+    properties::{PropertyItem, PropertyManager},
+};
 use crate::{vm::talents::TalentManager, LifeError};
-
+mod identifier;
 mod parser;
 mod properties;
 mod talents;

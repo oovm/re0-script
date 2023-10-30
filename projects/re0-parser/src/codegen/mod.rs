@@ -150,6 +150,7 @@ pub struct RootNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StatementNode {
+    Eos(EosNode),
     PropertyStatement(PropertyStatementNode),
     TraitGroup(TraitGroupNode),
     TraitStatement(TraitStatementNode),
@@ -179,14 +180,12 @@ pub enum PropertyItemNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EnumerateStatementNode {
-    pub identifier: IdentifierNode,
     pub variant: Vec<IdentifierNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OptionStatementNode {
-    pub identifier: IdentifierNode,
     pub variant: Vec<IdentifierNode>,
     pub span: Range<usize>,
 }
