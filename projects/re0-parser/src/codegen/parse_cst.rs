@@ -14,13 +14,14 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::TraitStatement => parse_trait_statement(state),
         LifeRestartRule::TraitItem => parse_trait_item(state),
         LifeRestartRule::TraitProperty => parse_trait_property(state),
+        LifeRestartRule::RequirementStatement => parse_requirement_statement(state),
+        LifeRestartRule::EffectStatement => parse_effect_statement(state),
         LifeRestartRule::EventGroup => parse_event_group(state),
         LifeRestartRule::EventStatement => parse_event_statement(state),
         LifeRestartRule::EventItem => parse_event_item(state),
         LifeRestartRule::EventProperty => parse_event_property(state),
         LifeRestartRule::IdStatement => parse_id_statement(state),
         LifeRestartRule::DescriptionStatement => parse_description_statement(state),
-        LifeRestartRule::RequirementStatement => parse_requirement_statement(state),
         LifeRestartRule::Expression => parse_expression(state),
         LifeRestartRule::Term => parse_term(state),
         LifeRestartRule::Atomic => parse_atomic(state),
@@ -51,6 +52,7 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::KW_ID => parse_kw_id(state),
         LifeRestartRule::KW_DESCRIPTION => parse_kw_description(state),
         LifeRestartRule::KW_REQUIREMENT => parse_kw_requirement(state),
+        LifeRestartRule::KW_EFFECT => parse_kw_effect(state),
         LifeRestartRule::KW_ENUMERATE => parse_kw_enumerate(state),
         LifeRestartRule::KW_OPTIONS => parse_kw_options(state),
         LifeRestartRule::WhiteSpace => parse_white_space(state),
@@ -94,7 +96,7 @@ fn parse_eos(state: Input) -> Output {
     state.rule(LifeRestartRule::EOS, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(,;)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(;)").unwrap())
         })
     })
 }
@@ -177,7 +179,7 @@ fn parse_option_statement(state: Input) -> Output {
                                             Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
                                                 Err(s)
                                                     .or_else(|s| parse_option_item(s).and_then(|s| s.tag_node("option_item")))
-                                                    .or_else(|s| parse_eos(s))
+                                                    .or_else(|s| parse_comma(s))
                                             })
                                         })
                                     })
@@ -197,7 +199,7 @@ fn parse_option_statement(state: Input) -> Output {
                                             Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
                                                 Err(s)
                                                     .or_else(|s| parse_option_item(s).and_then(|s| s.tag_node("option_item")))
-                                                    .or_else(|s| parse_eos(s))
+                                                    .or_else(|s| parse_comma(s))
                                             })
                                         })
                                     })
@@ -274,9 +276,11 @@ fn parse_trait_statement(state: Input) -> Output {
                 .and_then(|s| {
                     s.repeat(0..4294967295, |s| {
                         s.sequence(|s| {
-                            Ok(s)
-                                .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| parse_trait_item(s).and_then(|s| s.tag_node("trait_item")))
+                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                Err(s)
+                                    .or_else(|s| parse_trait_item(s).and_then(|s| s.tag_node("trait_item")))
+                                    .or_else(|s| parse_eos(s))
+                            })
                         })
                     })
                 })
@@ -292,7 +296,7 @@ fn parse_trait_item(state: Input) -> Output {
             .or_else(|s| parse_id_statement(s).and_then(|s| s.tag_node("id_statement")))
             .or_else(|s| parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
             .or_else(|s| parse_requirement_statement(s).and_then(|s| s.tag_node("requirement_statement")))
-            .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
+            .or_else(|s| parse_effect_statement(s).and_then(|s| s.tag_node("effect_statement")))
     })
 }
 #[inline]
@@ -305,6 +309,56 @@ fn parse_trait_property(state: Input) -> Output {
                 .and_then(|s| builtin_text(s, ":", false))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| parse_atomic(s).and_then(|s| s.tag_node("atomic")))
+        })
+    })
+}
+#[inline]
+fn parse_requirement_statement(state: Input) -> Output {
+    state.rule(LifeRestartRule::RequirementStatement, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| parse_kw_requirement(s))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "{", false))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                Err(s)
+                                    .or_else(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                    .or_else(|s| parse_eos(s))
+                            })
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "}", false))
+        })
+    })
+}
+#[inline]
+fn parse_effect_statement(state: Input) -> Output {
+    state.rule(LifeRestartRule::EffectStatement, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| parse_kw_effect(s))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "{", false))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                Err(s)
+                                    .or_else(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                    .or_else(|s| parse_eos(s))
+                            })
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "}", false))
         })
     })
 }
@@ -347,9 +401,11 @@ fn parse_event_statement(state: Input) -> Output {
                 .and_then(|s| {
                     s.repeat(0..4294967295, |s| {
                         s.sequence(|s| {
-                            Ok(s)
-                                .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| parse_event_item(s).and_then(|s| s.tag_node("event_item")))
+                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                Err(s)
+                                    .or_else(|s| parse_event_item(s).and_then(|s| s.tag_node("event_item")))
+                                    .or_else(|s| parse_eos(s))
+                            })
                         })
                     })
                 })
@@ -366,7 +422,6 @@ fn parse_event_item(state: Input) -> Output {
             .or_else(|s| parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
             .or_else(|s| parse_requirement_statement(s).and_then(|s| s.tag_node("requirement_statement")))
             .or_else(|s| parse_option_statement(s).and_then(|s| s.tag_node("option_statement")))
-            .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
     })
 }
 #[inline]
@@ -416,31 +471,6 @@ fn parse_description_statement(state: Input) -> Output {
                         .and_then(|s| builtin_text(s, "]", false))
                 })
             })
-    })
-}
-#[inline]
-fn parse_requirement_statement(state: Input) -> Output {
-    state.rule(LifeRestartRule::RequirementStatement, |s| {
-        s.sequence(|s| {
-            Ok(s)
-                .and_then(|s| parse_kw_requirement(s))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, "{", false))
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| {
-                    s.repeat(0..4294967295, |s| {
-                        s.sequence(|s| {
-                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
-                                Err(s)
-                                    .or_else(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
-                                    .or_else(|s| parse_eos(s))
-                            })
-                        })
-                    })
-                })
-                .and_then(|s| builtin_ignore(s))
-                .and_then(|s| builtin_text(s, "}", false))
-        })
     })
 }
 #[inline]
@@ -827,7 +857,16 @@ fn parse_kw_requirement(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_REQUIREMENT, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(出现要求|要求|requires)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(出现要求|要求|requires?)").unwrap())
+        })
+    })
+}
+#[inline]
+fn parse_kw_effect(state: Input) -> Output {
+    state.rule(LifeRestartRule::KW_EFFECT, |s| {
+        s.match_regex({
+            static REGEX: OnceLock<Regex> = OnceLock::new();
+            REGEX.get_or_init(|| Regex::new("^(效果|一次性效果|effects?)").unwrap())
         })
     })
 }

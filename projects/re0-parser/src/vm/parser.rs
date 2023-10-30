@@ -73,7 +73,6 @@ impl EventStatementNode {
                 EventItemNode::IdStatement(v) => {}
                 EventItemNode::OptionStatement(_) => {}
                 EventItemNode::RequirementStatement(_) => {}
-                EventItemNode::Eos(_) => {}
             }
         }
         Ok(out)
@@ -111,7 +110,7 @@ impl TalentManager {
                 TraitItemNode::DescriptionStatement(v) => item.load_text(v),
                 TraitItemNode::IdStatement(v) => item.index = v.as_index().ok(),
                 TraitItemNode::RequirementStatement(_) => {}
-                TraitItemNode::Eos(_) => {}
+                TraitItemNode::EffectStatement(_) => {}
             }
         }
         self.insert(item)?;

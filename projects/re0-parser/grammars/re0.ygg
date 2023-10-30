@@ -13,7 +13,7 @@ union Statement {
     | EOS
 }
 class EOS {
-    /,;/
+    /;/
 }
 // === 定义属性 === ---------------------------------------------------------------------------------------------------------
 class PropertyStatement {
@@ -33,8 +33,8 @@ class EnumerateStatement {
 }
 class OptionStatement {
     ^KW_OPTIONS (
-        | '[' (OptionItem|^EOS)* ']'
-        | '{' (OptionItem|^EOS)* '}'
+    | '[' (OptionItem|^COMMA)* ']'
+    | '{' (OptionItem|^COMMA)* '}'
     )
 }
 class OptionItem {
@@ -45,17 +45,23 @@ class TraitGroup {
     ^KW_TRAIT_GROUP Identifier '{' TraitStatement* '}'
 }
 class TraitStatement {
-    ^KW_TRAIT Identifier '{' TraitItem* '}'
+    ^KW_TRAIT Identifier '{' (TraitItem|^EOS)* '}'
 }
 
 union TraitItem {
     | IdStatement
     | DescriptionStatement
     | RequirementStatement
-    | EOS
+    | EffectStatement
 }
 class TraitProperty {
     Identifier ':' Atomic
+}
+class RequirementStatement {
+    ^KW_REQUIREMENT '{' (Expression|^EOS)* '}'
+}
+class EffectStatement {
+    ^KW_EFFECT '{' (Expression|^EOS)* '}'
 }
 // === 事件 === ---------------------------------------------------------------------------------------------------------
 class EventGroup {
@@ -63,7 +69,7 @@ class EventGroup {
 }
 
 class EventStatement {
-    ^KW_EVENT Identifier '{' EventItem* '}'
+    ^KW_EVENT Identifier '{' (EventItem|^EOS)* '}'
 }
 
 union EventItem {
@@ -71,7 +77,6 @@ union EventItem {
     | DescriptionStatement
     | RequirementStatement
     | OptionStatement
-    | EOS
 }
 
 class EventProperty {
@@ -83,9 +88,6 @@ class IdStatement {
 }
 class DescriptionStatement {
     ^KW_DESCRIPTION String? | '[' (String|^EOS)* ']'
-}
-class RequirementStatement {
-    ^KW_REQUIREMENT '{' (Expression|^EOS)* '}'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 atomic class Expression {
@@ -206,7 +208,8 @@ token {
     KW_ID:/编号|[Ii][Dd]/
     // description
     KW_DESCRIPTION: /动态文本|动态描述|文本|描述|details?/
-    KW_REQUIREMENT: /出现要求|要求|requires/
+    KW_REQUIREMENT: /出现要求|要求|requires?/
+    KW_EFFECT: /效果|一次性效果|effects?/
     KW_ENUMERATE: /枚举|enumerate/
     KW_OPTIONS: /选项|options/
 }

@@ -42,13 +42,14 @@ pub enum LifeRestartRule {
     TraitStatement,
     TraitItem,
     TraitProperty,
+    RequirementStatement,
+    EffectStatement,
     EventGroup,
     EventStatement,
     EventItem,
     EventProperty,
     IdStatement,
     DescriptionStatement,
-    RequirementStatement,
     Expression,
     Term,
     Atomic,
@@ -79,6 +80,7 @@ pub enum LifeRestartRule {
     KW_ID,
     KW_DESCRIPTION,
     KW_REQUIREMENT,
+    KW_EFFECT,
     KW_ENUMERATE,
     KW_OPTIONS,
     WhiteSpace,
@@ -106,13 +108,14 @@ impl YggdrasilRule for LifeRestartRule {
             Self::TraitStatement => "",
             Self::TraitItem => "",
             Self::TraitProperty => "",
+            Self::RequirementStatement => "",
+            Self::EffectStatement => "",
             Self::EventGroup => "",
             Self::EventStatement => "",
             Self::EventItem => "",
             Self::EventProperty => "",
             Self::IdStatement => "",
             Self::DescriptionStatement => "",
-            Self::RequirementStatement => "",
             Self::Expression => "",
             Self::Term => "",
             Self::Atomic => "",
@@ -143,6 +146,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::KW_ID => "",
             Self::KW_DESCRIPTION => "",
             Self::KW_REQUIREMENT => "",
+            Self::KW_EFFECT => "",
             Self::KW_ENUMERATE => "",
             Self::KW_OPTIONS => "",
             Self::WhiteSpace => "",
@@ -226,7 +230,7 @@ pub struct TraitStatementNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TraitItemNode {
     DescriptionStatement(DescriptionStatementNode),
-    Eos(EosNode),
+    EffectStatement(EffectStatementNode),
     IdStatement(IdStatementNode),
     RequirementStatement(RequirementStatementNode),
 }
@@ -235,6 +239,18 @@ pub enum TraitItemNode {
 pub struct TraitPropertyNode {
     pub atomic: AtomicNode,
     pub identifier: IdentifierNode,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RequirementStatementNode {
+    pub expression: Vec<ExpressionNode>,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct EffectStatementNode {
+    pub expression: Vec<ExpressionNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -255,7 +271,6 @@ pub struct EventStatementNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EventItemNode {
     DescriptionStatement(DescriptionStatementNode),
-    Eos(EosNode),
     IdStatement(IdStatementNode),
     OptionStatement(OptionStatementNode),
     RequirementStatement(RequirementStatementNode),
@@ -276,12 +291,6 @@ pub struct IdStatementNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DescriptionStatementNode {
     pub string: Vec<StringNode>,
-    pub span: Range<usize>,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RequirementStatementNode {
-    pub expression: Vec<ExpressionNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -464,6 +473,11 @@ pub struct KwDescriptionNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwRequirementNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwEffectNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
