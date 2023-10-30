@@ -126,33 +126,33 @@ text class Integer {
 
 class RangeExact {
     '{' Integer '}'
-  }
+}
 
-  class Range {
+class Range {
     '{' (min: Integer)? ',' (max: Integer)? '}'
-  }
+}
 
-  union Boolean {
+union Boolean {
     | 'true' #True
     | 'false' #False
-  }
+}
 
-  @railroad(false)
-  @style(keyword)
-  token {
+@railroad(false)
+@style(keyword)
+token {
     KW_ATTRIBUTE: /属性|属性名/
     KW_TRAIT: /特质|特征/
     KW_EVENT: /事件/
-  }
+}
 
-  @railroad(false)
-  hide class WhiteSpace {
+@railroad(false)
+hide class WhiteSpace {
     /\p{White_Space}+/
-  }
+}
 
-  @style(comment)
-  @railroad(false)
-  hide class Comment {
+@style(comment)
+@railroad(false)
+hide class Comment {
     | /\/\/[^\n\r]*/
     | '/*' '*/'
-  }
+}
