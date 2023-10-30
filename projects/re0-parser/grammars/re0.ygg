@@ -1,18 +1,16 @@
-grammar Inference {
+grammar LifeRestart {
 
 }
 class Root {
-    Statement*
+    Statement* EOI
 }
 
 union Statement {
     | PropertyStatement
-    | TraitStatement
-    | EventStatement
 }
 
 class PropertyStatement {
-    ^KW_ATTRIBUTE Identifier PropertyBlock
+    ^KW_PROPERTY Identifier PropertyBlock
 }
 
 class PropertyBlock {
@@ -42,8 +40,17 @@ class EventBlock {
 class EventProperty {
     Identifier (':' | '[') Expression (']' | '{' EventBlock '}' | EventBlock)?
 }
+// === 通用属性 === ---------------------------------------------------------------------------------------------------------
+class IDStatement {
+    ^KW_ID Identifier Integer
+}
 
-union Expression {
+// === 表达式 === ---------------------------------------------------------------------------------------------------------
+class Expression {
+    Atomic
+}
+
+union Atomic {
     | Identifier
     | Integer
     | StringRaw
@@ -51,35 +58,22 @@ union Expression {
     | Boolean
     | RangeExact
     | Range
-    | NegationExpression
-    | ComparisonExpression
-    | LogicalExpression
 }
 
-class NegationExpression {
-    '!' Expression
+
+union Prefix {
+    | /不是|非|!/
 }
 
-class ComparisonExpression {
-    Identifier ComparisonOperator Expression
-}
-
-class LogicalExpression {
-    Expression LogicalOperator Expression
-}
-
-union ComparisonOperator {
-    | '>'
-    | '>='
-    | '<'
-    | '<='
-    | '=='
-    | '!='
-}
-
-union LogicalOperator {
-    | '&&'
-    | '||'
+union Infix {
+    | /大于|>/     #GT
+    | /大于等于|>=/ #GEQ
+    | /小于|</     #LT
+    | /小于等于|<=/ #LEQ
+    | /为|等于|==/  #EQ
+    | /不等于|!=/   #NE
+    | /&&|且/      #And
+    | /\|\||或/    #Or
 }
 
 atomic class StringRaw {
@@ -109,7 +103,7 @@ atomic class EscapedCharacter {
 }
 
 text class HEX {
-    [0-9a-fA-F]{1,6}
+    [0-9a-fA-F]{1, 6}
 }
 
 text class TextAny {
@@ -133,25 +127,30 @@ class Range {
 }
 
 union Boolean {
-    | 'true' #True
-    | 'false' #False
+    | /真|true/ #True
+    | /假|false/ #False
 }
 
-@railroad(false)
+@railway(false)
 @style(keyword)
 token {
-    KW_ATTRIBUTE: /属性|属性名/
-    KW_TRAIT: /特质|特征/
-    KW_EVENT: /事件/
+    KW_PROPERTY: /属性|property/
+    KW_TRAIT_GROUP: /特质组|特征组|traits|trait-group/
+    KW_TRAIT: /特质|特征|trait/
+    KW_EVENT_GROUP: /事件组|events|event-group/
+    KW_EVENT: /事件|event/
+    KW_ID:/编号|[Ii][Dd]/
+    KW_TEXT: /文本|描述|details?/
+    KW_TEXT_DYNAMIC: /动态文本|动态描述/
 }
 
-@railroad(false)
+@railway(false)
 hide class WhiteSpace {
     /\p{White_Space}+/
 }
 
 @style(comment)
-@railroad(false)
+@railway(false)
 hide class Comment {
     | /\/\/[^\n\r]*/
     | '/*' '*/'
