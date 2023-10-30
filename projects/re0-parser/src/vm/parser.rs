@@ -59,6 +59,9 @@ impl PropertyManager {
                 }
                 PropertyItemNode::DescriptionStatement(v) => item.load_text(v),
                 PropertyItemNode::RequirementStatement(_) => {}
+                PropertyItemNode::EnumerateStatement(_) => {}
+                PropertyItemNode::OptionStatement(_) => {}
+                PropertyItemNode::Eos(_) => {}
             }
         }
         self.insert(item)?;
@@ -74,6 +77,7 @@ impl TalentManager {
                 TraitItemNode::DescriptionStatement(v) => item.load_text(v),
                 TraitItemNode::IdStatement(v) => item.load_id(v)?,
                 TraitItemNode::RequirementStatement(_) => {}
+                TraitItemNode::Eos(_) => {}
             }
         }
         self.insert(item)?;

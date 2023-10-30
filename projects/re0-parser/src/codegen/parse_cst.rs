@@ -4,8 +4,11 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
     state(input, |state| match rule {
         LifeRestartRule::Root => parse_root(state),
         LifeRestartRule::Statement => parse_statement(state),
+        LifeRestartRule::EOS => parse_eos(state),
         LifeRestartRule::PropertyStatement => parse_property_statement(state),
         LifeRestartRule::PropertyItem => parse_property_item(state),
+        LifeRestartRule::EnumerateStatement => parse_enumerate_statement(state),
+        LifeRestartRule::OptionStatement => parse_option_statement(state),
         LifeRestartRule::TraitGroup => parse_trait_group(state),
         LifeRestartRule::TraitStatement => parse_trait_statement(state),
         LifeRestartRule::TraitItem => parse_trait_item(state),
@@ -43,6 +46,8 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::KW_ID => parse_kw_id(state),
         LifeRestartRule::KW_DESCRIPTION => parse_kw_description(state),
         LifeRestartRule::KW_REQUIREMENT => parse_kw_requirement(state),
+        LifeRestartRule::KW_ENUMERATE => parse_kw_enumerate(state),
+        LifeRestartRule::KW_OPTIONS => parse_kw_options(state),
         LifeRestartRule::WhiteSpace => parse_white_space(state),
         LifeRestartRule::Comment => parse_comment(state),
         LifeRestartRule::HiddenText => unreachable!(),
@@ -77,6 +82,15 @@ fn parse_statement(state: Input) -> Output {
     })
 }
 #[inline]
+fn parse_eos(state: Input) -> Output {
+    state.rule(LifeRestartRule::EOS, |s| {
+        s.match_regex({
+            static REGEX: OnceLock<Regex> = OnceLock::new();
+            REGEX.get_or_init(|| Regex::new("^(;)").unwrap())
+        })
+    })
+}
+#[inline]
 fn parse_property_statement(state: Input) -> Output {
     state.rule(LifeRestartRule::PropertyStatement, |s| {
         s.sequence(|s| {
@@ -108,6 +122,101 @@ fn parse_property_item(state: Input) -> Output {
             .or_else(|s| parse_id_statement(s).and_then(|s| s.tag_node("id_statement")))
             .or_else(|s| parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
             .or_else(|s| parse_requirement_statement(s).and_then(|s| s.tag_node("requirement_statement")))
+            .or_else(|s| parse_option_statement(s).and_then(|s| s.tag_node("option_statement")))
+            .or_else(|s| parse_enumerate_statement(s).and_then(|s| s.tag_node("enumerate_statement")))
+            .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
+    })
+}
+#[inline]
+fn parse_enumerate_statement(state: Input) -> Output {
+    state.rule(LifeRestartRule::EnumerateStatement, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| parse_kw_enumerate(s))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "[", false))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.optional(|s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| {
+                                    s.repeat(0..4294967295, |s| {
+                                        s.sequence(|s| {
+                                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                                s.sequence(|s| {
+                                                    Ok(s)
+                                                        .and_then(|s| {
+                                                            s.sequence(|s| {
+                                                                Ok(s)
+                                                                    .and_then(|s| parse_comma(s))
+                                                                    .and_then(|s| builtin_ignore(s))
+                                                            })
+                                                        })
+                                                        .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| s.optional(|s| parse_comma(s)))
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "]", false))
+        })
+    })
+}
+#[inline]
+fn parse_option_statement(state: Input) -> Output {
+    state.rule(LifeRestartRule::OptionStatement, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| parse_kw_options(s))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("identifier")))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "[", false))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.optional(|s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| {
+                                    s.repeat(0..4294967295, |s| {
+                                        s.sequence(|s| {
+                                            Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                                s.sequence(|s| {
+                                                    Ok(s)
+                                                        .and_then(|s| {
+                                                            s.sequence(|s| {
+                                                                Ok(s)
+                                                                    .and_then(|s| parse_comma(s))
+                                                                    .and_then(|s| builtin_ignore(s))
+                                                            })
+                                                        })
+                                                        .and_then(|s| parse_identifier(s).and_then(|s| s.tag_node("variant")))
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| s.optional(|s| parse_comma(s)))
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "]", false))
+        })
     })
 }
 #[inline]
@@ -167,6 +276,7 @@ fn parse_trait_item(state: Input) -> Output {
             .or_else(|s| parse_id_statement(s).and_then(|s| s.tag_node("id_statement")))
             .or_else(|s| parse_description_statement(s).and_then(|s| s.tag_node("description_statement")))
             .or_else(|s| parse_requirement_statement(s).and_then(|s| s.tag_node("requirement_statement")))
+            .or_else(|s| parse_eos(s).and_then(|s| s.tag_node("eos")))
     })
 }
 #[inline]
@@ -273,7 +383,7 @@ fn parse_description_statement(state: Input) -> Output {
             .or_else(|s| {
                 s.sequence(|s| {
                     Ok(s)
-                        .and_then(|s| builtin_text(s, "(", false))
+                        .and_then(|s| builtin_text(s, "[", false))
                         .and_then(|s| builtin_ignore(s))
                         .and_then(|s| {
                             s.optional(|s| {
@@ -282,22 +392,28 @@ fn parse_description_statement(state: Input) -> Output {
                                         .and_then(|s| parse_string(s).and_then(|s| s.tag_node("string")))
                                         .and_then(|s| builtin_ignore(s))
                                         .and_then(|s| {
-                                            s.optional(|s| {
+                                            s.repeat(0..4294967295, |s| {
                                                 s.sequence(|s| {
-                                                    Ok(s)
-                                                        .and_then(|s| parse_comma(s).and_then(|s| s.tag_node("comma")))
-                                                        .and_then(|s| builtin_ignore(s))
-                                                        .and_then(|s| parse_string(s).and_then(|s| s.tag_node("string")))
+                                                    Ok(s).and_then(|s| builtin_ignore(s)).and_then(|s| {
+                                                        s.sequence(|s| {
+                                                            Ok(s)
+                                                                .and_then(|s| parse_comma(s))
+                                                                .and_then(|s| builtin_ignore(s))
+                                                                .and_then(|s| {
+                                                                    parse_string(s).and_then(|s| s.tag_node("string"))
+                                                                })
+                                                        })
+                                                    })
                                                 })
                                             })
                                         })
                                         .and_then(|s| builtin_ignore(s))
-                                        .and_then(|s| s.optional(|s| parse_comma(s).and_then(|s| s.tag_node("comma"))))
+                                        .and_then(|s| s.optional(|s| parse_comma(s)))
                                 })
                             })
                         })
                         .and_then(|s| builtin_ignore(s))
-                        .and_then(|s| builtin_text(s, ")", false))
+                        .and_then(|s| builtin_text(s, "]", false))
                 })
             })
     })
@@ -640,6 +756,24 @@ fn parse_kw_requirement(state: Input) -> Output {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
             REGEX.get_or_init(|| Regex::new("^(出现要求|要求|requires)").unwrap())
+        })
+    })
+}
+#[inline]
+fn parse_kw_enumerate(state: Input) -> Output {
+    state.rule(LifeRestartRule::KW_ENUMERATE, |s| {
+        s.match_regex({
+            static REGEX: OnceLock<Regex> = OnceLock::new();
+            REGEX.get_or_init(|| Regex::new("^(枚举|enumerate)").unwrap())
+        })
+    })
+}
+#[inline]
+fn parse_kw_options(state: Input) -> Output {
+    state.rule(LifeRestartRule::KW_OPTIONS, |s| {
+        s.match_regex({
+            static REGEX: OnceLock<Regex> = OnceLock::new();
+            REGEX.get_or_init(|| Regex::new("^(选项|options)").unwrap())
         })
     })
 }

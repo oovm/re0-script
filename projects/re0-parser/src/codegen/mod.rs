@@ -32,8 +32,11 @@ impl YggdrasilParser for LifeRestartParser {
 pub enum LifeRestartRule {
     Root,
     Statement,
+    EOS,
     PropertyStatement,
     PropertyItem,
+    EnumerateStatement,
+    OptionStatement,
     TraitGroup,
     TraitStatement,
     TraitItem,
@@ -71,6 +74,8 @@ pub enum LifeRestartRule {
     KW_ID,
     KW_DESCRIPTION,
     KW_REQUIREMENT,
+    KW_ENUMERATE,
+    KW_OPTIONS,
     WhiteSpace,
     Comment,
     /// Label for unnamed text literal
@@ -86,8 +91,11 @@ impl YggdrasilRule for LifeRestartRule {
         match self {
             Self::Root => "",
             Self::Statement => "",
+            Self::EOS => "",
             Self::PropertyStatement => "",
             Self::PropertyItem => "",
+            Self::EnumerateStatement => "",
+            Self::OptionStatement => "",
             Self::TraitGroup => "",
             Self::TraitStatement => "",
             Self::TraitItem => "",
@@ -125,6 +133,8 @@ impl YggdrasilRule for LifeRestartRule {
             Self::KW_ID => "",
             Self::KW_DESCRIPTION => "",
             Self::KW_REQUIREMENT => "",
+            Self::KW_ENUMERATE => "",
+            Self::KW_OPTIONS => "",
             Self::WhiteSpace => "",
             Self::Comment => "",
             _ => "",
@@ -146,6 +156,11 @@ pub enum StatementNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct EosNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PropertyStatementNode {
     pub identifier: IdentifierNode,
     pub property_item: Vec<PropertyItemNode>,
@@ -155,8 +170,25 @@ pub struct PropertyStatementNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PropertyItemNode {
     DescriptionStatement(DescriptionStatementNode),
+    EnumerateStatement(EnumerateStatementNode),
+    Eos(EosNode),
     IdStatement(IdStatementNode),
+    OptionStatement(OptionStatementNode),
     RequirementStatement(RequirementStatementNode),
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct EnumerateStatementNode {
+    pub identifier: IdentifierNode,
+    pub variant: Vec<IdentifierNode>,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct OptionStatementNode {
+    pub identifier: IdentifierNode,
+    pub variant: Vec<IdentifierNode>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -176,6 +208,7 @@ pub struct TraitStatementNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TraitItemNode {
     DescriptionStatement(DescriptionStatementNode),
+    Eos(EosNode),
     IdStatement(IdStatementNode),
     RequirementStatement(RequirementStatementNode),
 }
@@ -216,7 +249,6 @@ pub struct IdStatementNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DescriptionStatementNode {
-    pub comma: Vec<CommaNode>,
     pub string: Vec<StringNode>,
     pub span: Range<usize>,
 }
@@ -386,6 +418,16 @@ pub struct KwDescriptionNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwRequirementNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwEnumerateNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwOptionsNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]

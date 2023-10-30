@@ -1,4 +1,6 @@
 use super::*;
+use crate::helper::PositionDisplay;
+use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Debug)]
 pub struct PropertyManager {
@@ -9,7 +11,7 @@ pub struct PropertyManager {
     buffer: Vec<PropertyItem>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct PropertyItem {
     /// 属性名字, 用于动态查询
     pub name: String,
@@ -21,6 +23,19 @@ pub struct PropertyItem {
     pub file: Option<Url>,
     /// 定义所在位置
     pub span: Range<usize>,
+}
+
+impl Debug for PropertyItem {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let w = &mut f.debug_struct("PropertyItem");
+        w.field("name", &self.name);
+        if let Some(s) = self.id {
+            w.field("id", &s);
+        }
+        let span = PositionDisplay::new(&self.file, &self.span);
+        w.field("span", &span);
+        w.finish()
+    }
 }
 
 impl Default for PropertyManager {

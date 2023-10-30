@@ -6,6 +6,7 @@
 
 mod codegen;
 mod errors;
+mod helper;
 pub mod vm;
 
 pub use yggdrasil_rt::YggdrasilParser;

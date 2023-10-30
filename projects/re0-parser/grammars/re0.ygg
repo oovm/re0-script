@@ -9,6 +9,9 @@ union Statement {
     | TraitGroup
     | TraitStatement
 }
+class EOS {
+    /;/
+}
 // === 定义属性 === ---------------------------------------------------------------------------------------------------------
 class PropertyStatement {
     ^KW_PROPERTY Identifier '{' PropertyItem* '}'
@@ -18,6 +21,15 @@ union PropertyItem {
     | IdStatement
     | DescriptionStatement
     | RequirementStatement
+    | OptionStatement
+    | EnumerateStatement
+    | EOS
+}
+class EnumerateStatement {
+    ^KW_ENUMERATE Identifier '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
+}
+class OptionStatement {
+    ^KW_OPTIONS Identifier '[' (variant:Identifier (^COMMA variant:Identifier)* ^COMMA?)? ']'
 }
 // === 定义天赋 === ---------------------------------------------------------------------------------------------------------
 class TraitGroup {
@@ -31,6 +43,7 @@ union TraitItem {
     | IdStatement
     | DescriptionStatement
     | RequirementStatement
+    | EOS
 }
 
 class TraitProperty {
@@ -53,7 +66,7 @@ class IdStatement {
     ^KW_ID Integer
 }
 class DescriptionStatement {
-    ^KW_DESCRIPTION String? | '(' (String (COMMA String)? COMMA?)? ')'
+    ^KW_DESCRIPTION String? | '[' (String (^COMMA String)* ^COMMA?)? ']'
 }
 class RequirementStatement {
     ^KW_REQUIREMENT '{'  '}'
@@ -63,6 +76,7 @@ class Expression {
     Atomic
 }
 
+@railway(false)
 union Atomic {
     | Identifier
     | Integer
@@ -73,11 +87,14 @@ union Atomic {
     | Range
 }
 
-
+@style(operator)
+@railway(false)
 union Prefix {
     | /不是|非|!/
 }
 
+@style(operator)
+@railway(false)
 union Infix {
     | /大于|>/     #GT
     | /大于等于|>=/ #GEQ
@@ -165,6 +182,8 @@ token {
     // description
     KW_DESCRIPTION: /动态文本|动态描述|文本|描述|details?/
     KW_REQUIREMENT: /出现要求|要求|requires/
+    KW_ENUMERATE: /枚举|enumerate/
+    KW_OPTIONS: /选项|options/
 }
 
 @railway(false)
