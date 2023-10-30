@@ -11,7 +11,7 @@ use url::Url;
 use crate::{
     codegen::{
         DescriptionStatementNode, EventGroupNode, EventItemNode, EventStatementNode, IdStatementNode, IdentifierNode,
-        PropertyStatementNode, StringNode, TraitItemNode, TraitStatementNode,
+        PropertyStatementNode, StringNode, TopStatementNode, TraitItemNode, TraitStatementNode,
     },
     vm::talents::TalentItem,
     LifeError,
@@ -37,18 +37,18 @@ impl LifeVM {
         Ok(())
     }
     fn load_statements(&mut self, root: RootNode, file: Option<Url>) -> Result<(), LifeError> {
-        for x in root.statement {
+        for x in root.top_statement {
             match x {
-                StatementNode::PropertyStatement(v) => self.property.load_property(v, file.clone())?,
-                StatementNode::TraitStatement(v) => self.talent.load_talent(v, &file)?,
-                StatementNode::TraitGroup(v) => {
+                TopStatementNode::PropertyStatement(v) => self.property.load_property(v, file.clone())?,
+                TopStatementNode::TraitStatement(v) => self.talent.load_talent(v, &file)?,
+                TopStatementNode::TraitGroup(v) => {
                     for item in v.trait_statement {
                         self.talent.load_talent(item, &file)?
                     }
                 }
-                StatementNode::EventGroup(v) => {}
-                StatementNode::EventStatement(v) => self.story.insert(v.as_story(&file)?)?,
-                StatementNode::Eos(_) => {}
+                TopStatementNode::EventGroup(v) => {}
+                TopStatementNode::EventStatement(v) => self.story.insert(v.as_story(&file)?)?,
+                TopStatementNode::Eos(_) => {}
             }
         }
         Ok(())

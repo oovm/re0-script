@@ -9,7 +9,9 @@ impl YggdrasilNode for RootNode {
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
         Ok(Self {
-            statement: pair.take_tagged_items::<StatementNode>(Cow::Borrowed("statement")).collect::<Result<Vec<_>, _>>()?,
+            top_statement: pair
+                .take_tagged_items::<TopStatementNode>(Cow::Borrowed("top_statement"))
+                .collect::<Result<Vec<_>, _>>()?,
             span: Range { start: _span.start() as usize, end: _span.end() as usize },
         })
     }
@@ -23,7 +25,7 @@ impl FromStr for RootNode {
     }
 }
 #[automatically_derived]
-impl YggdrasilNode for StatementNode {
+impl YggdrasilNode for TopStatementNode {
     type Rule = LifeRestartRule;
 
     fn get_range(&self) -> Option<Range<usize>> {
@@ -56,15 +58,15 @@ impl YggdrasilNode for StatementNode {
         if let Ok(s) = pair.take_tagged_one::<TraitStatementNode>(Cow::Borrowed("trait_statement")) {
             return Ok(Self::TraitStatement(s));
         }
-        Err(YggdrasilError::invalid_node(LifeRestartRule::Statement, _span))
+        Err(YggdrasilError::invalid_node(LifeRestartRule::TopStatement, _span))
     }
 }
 #[automatically_derived]
-impl FromStr for StatementNode {
+impl FromStr for TopStatementNode {
     type Err = YggdrasilError<LifeRestartRule>;
 
     fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
-        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::Statement)?)
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::TopStatement)?)
     }
 }
 #[automatically_derived]
@@ -351,7 +353,7 @@ impl YggdrasilNode for RequirementStatementNode {
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
         Ok(Self {
-            expression: pair.take_tagged_items::<ExpressionNode>(Cow::Borrowed("expression")).collect::<Result<Vec<_>, _>>()?,
+            statement: pair.take_tagged_items::<StatementNode>(Cow::Borrowed("statement")).collect::<Result<Vec<_>, _>>()?,
             span: Range { start: _span.start() as usize, end: _span.end() as usize },
         })
     }
@@ -374,7 +376,7 @@ impl YggdrasilNode for EffectStatementNode {
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
         Ok(Self {
-            expression: pair.take_tagged_items::<ExpressionNode>(Cow::Borrowed("expression")).collect::<Result<Vec<_>, _>>()?,
+            statement: pair.take_tagged_items::<StatementNode>(Cow::Borrowed("statement")).collect::<Result<Vec<_>, _>>()?,
             span: Range { start: _span.start() as usize, end: _span.end() as usize },
         })
     }
@@ -544,6 +546,109 @@ impl FromStr for DescriptionStatementNode {
     }
 }
 #[automatically_derived]
+impl YggdrasilNode for StatementNode {
+    type Rule = LifeRestartRule;
+
+    fn get_range(&self) -> Option<Range<usize>> {
+        match self {
+            Self::Eos(s) => s.get_range(),
+            Self::Expression(s) => s.get_range(),
+            Self::IfStatement(s) => s.get_range(),
+        }
+    }
+    fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
+        let _span = pair.get_span();
+        if let Ok(s) = pair.take_tagged_one::<EosNode>(Cow::Borrowed("eos")) {
+            return Ok(Self::Eos(s));
+        }
+        if let Ok(s) = pair.take_tagged_one::<ExpressionNode>(Cow::Borrowed("expression")) {
+            return Ok(Self::Expression(s));
+        }
+        if let Ok(s) = pair.take_tagged_one::<IfStatementNode>(Cow::Borrowed("if_statement")) {
+            return Ok(Self::IfStatement(s));
+        }
+        Err(YggdrasilError::invalid_node(LifeRestartRule::Statement, _span))
+    }
+}
+#[automatically_derived]
+impl FromStr for StatementNode {
+    type Err = YggdrasilError<LifeRestartRule>;
+
+    fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::Statement)?)
+    }
+}
+#[automatically_derived]
+impl YggdrasilNode for IfStatementNode {
+    type Rule = LifeRestartRule;
+
+    fn get_range(&self) -> Option<Range<usize>> {
+        Some(Range { start: self.span.start as usize, end: self.span.end as usize })
+    }
+    fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
+        let _span = pair.get_span();
+        Ok(Self {
+            if_else_block: pair.take_tagged_option::<IfElseBlockNode>(Cow::Borrowed("if_else_block")),
+            if_then_block: pair.take_tagged_one::<IfThenBlockNode>(Cow::Borrowed("if_then_block"))?,
+            span: Range { start: _span.start() as usize, end: _span.end() as usize },
+        })
+    }
+}
+#[automatically_derived]
+impl FromStr for IfStatementNode {
+    type Err = YggdrasilError<LifeRestartRule>;
+
+    fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::IfStatement)?)
+    }
+}
+#[automatically_derived]
+impl YggdrasilNode for IfThenBlockNode {
+    type Rule = LifeRestartRule;
+
+    fn get_range(&self) -> Option<Range<usize>> {
+        Some(Range { start: self.span.start as usize, end: self.span.end as usize })
+    }
+    fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
+        let _span = pair.get_span();
+        Ok(Self {
+            expression: pair.take_tagged_items::<ExpressionNode>(Cow::Borrowed("expression")).collect::<Result<Vec<_>, _>>()?,
+            span: Range { start: _span.start() as usize, end: _span.end() as usize },
+        })
+    }
+}
+#[automatically_derived]
+impl FromStr for IfThenBlockNode {
+    type Err = YggdrasilError<LifeRestartRule>;
+
+    fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::IfThenBlock)?)
+    }
+}
+#[automatically_derived]
+impl YggdrasilNode for IfElseBlockNode {
+    type Rule = LifeRestartRule;
+
+    fn get_range(&self) -> Option<Range<usize>> {
+        Some(Range { start: self.span.start as usize, end: self.span.end as usize })
+    }
+    fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
+        let _span = pair.get_span();
+        Ok(Self {
+            expression: pair.take_tagged_items::<ExpressionNode>(Cow::Borrowed("expression")).collect::<Result<Vec<_>, _>>()?,
+            span: Range { start: _span.start() as usize, end: _span.end() as usize },
+        })
+    }
+}
+#[automatically_derived]
+impl FromStr for IfElseBlockNode {
+    type Err = YggdrasilError<LifeRestartRule>;
+
+    fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::IfElseBlock)?)
+    }
+}
+#[automatically_derived]
 impl YggdrasilNode for ExpressionNode {
     type Rule = LifeRestartRule;
 
@@ -672,6 +777,8 @@ impl YggdrasilNode for InfixNode {
 
     fn get_range(&self) -> Option<Range<usize>> {
         match self {
+            Self::Add => None,
+            Self::AddAssign => None,
             Self::And => None,
             Self::EQ => None,
             Self::GEQ => None,
@@ -680,10 +787,18 @@ impl YggdrasilNode for InfixNode {
             Self::LT => None,
             Self::NE => None,
             Self::Or => None,
+            Self::Sub => None,
+            Self::SubAssign => None,
         }
     }
     fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
         let _span = pair.get_span();
+        if let Some(_) = pair.find_first_tag("add") {
+            return Ok(Self::Add);
+        }
+        if let Some(_) = pair.find_first_tag("add_assign") {
+            return Ok(Self::AddAssign);
+        }
         if let Some(_) = pair.find_first_tag("and") {
             return Ok(Self::And);
         }
@@ -707,6 +822,12 @@ impl YggdrasilNode for InfixNode {
         }
         if let Some(_) = pair.find_first_tag("or") {
             return Ok(Self::Or);
+        }
+        if let Some(_) = pair.find_first_tag("sub") {
+            return Ok(Self::Sub);
+        }
+        if let Some(_) = pair.find_first_tag("sub_assign") {
+            return Ok(Self::SubAssign);
         }
         Err(YggdrasilError::invalid_node(LifeRestartRule::Infix, _span))
     }
@@ -1327,6 +1448,46 @@ impl FromStr for KwOptionsNode {
 
     fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
         Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::KW_OPTIONS)?)
+    }
+}
+#[automatically_derived]
+impl YggdrasilNode for KwIfNode {
+    type Rule = LifeRestartRule;
+
+    fn get_range(&self) -> Option<Range<usize>> {
+        Some(Range { start: self.span.start as usize, end: self.span.end as usize })
+    }
+    fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
+        let _span = pair.get_span();
+        Ok(Self { span: Range { start: _span.start() as usize, end: _span.end() as usize } })
+    }
+}
+#[automatically_derived]
+impl FromStr for KwIfNode {
+    type Err = YggdrasilError<LifeRestartRule>;
+
+    fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::KW_IF)?)
+    }
+}
+#[automatically_derived]
+impl YggdrasilNode for KwElseNode {
+    type Rule = LifeRestartRule;
+
+    fn get_range(&self) -> Option<Range<usize>> {
+        Some(Range { start: self.span.start as usize, end: self.span.end as usize })
+    }
+    fn from_pair(pair: TokenPair<Self::Rule>) -> Result<Self, YggdrasilError<Self::Rule>> {
+        let _span = pair.get_span();
+        Ok(Self { span: Range { start: _span.start() as usize, end: _span.end() as usize } })
+    }
+}
+#[automatically_derived]
+impl FromStr for KwElseNode {
+    type Err = YggdrasilError<LifeRestartRule>;
+
+    fn from_str(input: &str) -> Result<Self, YggdrasilError<LifeRestartRule>> {
+        Self::from_cst(LifeRestartParser::parse_cst(input, LifeRestartRule::KW_ELSE)?)
     }
 }
 #[automatically_derived]
