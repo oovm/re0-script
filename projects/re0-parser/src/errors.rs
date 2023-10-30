@@ -27,7 +27,11 @@ impl From<LifeErrorKind> for LifeError {
         Self { kind: Box::new(value) }
     }
 }
-
+impl From<std::io::Error> for LifeError {
+    fn from(value: std::io::Error) -> Self {
+        LifeErrorKind::RuntimeError { message: value.to_string() }.into()
+    }
+}
 impl From<ParseIntError> for LifeError {
     fn from(value: ParseIntError) -> Self {
         LifeErrorKind::SyntaxError { message: value.to_string(), file: None, span: Default::default() }.into()

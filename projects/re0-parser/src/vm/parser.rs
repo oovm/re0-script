@@ -19,22 +19,30 @@ use super::*;
 impl LifeVM {
     pub fn load_script(&mut self, text: &str) -> Result<(), LifeError> {
         let ast = RootNode::from_str(text).unwrap();
-        for x in ast.statement {
-            match x {
-                StatementNode::PropertyStatement(v) => self.property.load_property(v, None)?,
-                StatementNode::TraitStatement(v) => self.talent.load_talent(v, None)?,
-            }
-        }
+        self.load_statements(ast, None)?;
         Ok(())
     }
-    pub fn load_local(&mut self, file: &Path) -> Result<(), LifeError> {
-        let url = Url::from_file_path(file.canonicalize().unwrap()).unwrap();
-        let text = read_to_string(file).unwrap();
+    pub fn load_local<P>(&mut self, file: P) -> Result<(), LifeError>
+    where
+        P: AsRef<Path>,
+    {
+        let file = file.as_ref().canonicalize()?;
+        let url = Url::from_file_path(&file).unwrap();
+        let text = read_to_string(&file)?;
         let ast = RootNode::from_str(&text).unwrap();
-        for x in ast.statement {
+        self.load_statements(ast, Some(url))?;
+        Ok(())
+    }
+    fn load_statements(&mut self, root: RootNode, file: Option<Url>) -> Result<(), LifeError> {
+        for x in root.statement {
             match x {
-                StatementNode::PropertyStatement(v) => self.property.load_property(v, Some(url.clone()))?,
-                StatementNode::TraitStatement(v) => self.talent.load_talent(v, Some(url.clone()))?,
+                StatementNode::PropertyStatement(v) => self.property.load_property(v, file.clone())?,
+                StatementNode::TraitStatement(v) => self.talent.load_talent(v, file.clone())?,
+                StatementNode::TraitGroup(v) => {
+                    for item in v.trait_statement {
+                        self.talent.load_talent(item, file.clone())?
+                    }
+                }
             }
         }
         Ok(())
@@ -50,6 +58,7 @@ impl PropertyManager {
                     item.load_id(id)?;
                 }
                 PropertyItemNode::DescriptionStatement(v) => item.load_text(v),
+                PropertyItemNode::RequirementStatement(_) => {}
             }
         }
         self.insert(item)?;
@@ -64,6 +73,7 @@ impl TalentManager {
             match x {
                 TraitItemNode::DescriptionStatement(v) => item.load_text(v),
                 TraitItemNode::IdStatement(v) => item.load_id(v)?,
+                TraitItemNode::RequirementStatement(_) => {}
             }
         }
         self.insert(item)?;

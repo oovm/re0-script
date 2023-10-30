@@ -21,7 +21,7 @@ union PropertyItem {
 }
 // === 定义天赋 === ---------------------------------------------------------------------------------------------------------
 class TraitGroup {
-    TraitStatement*
+    ^KW_TRAIT_GROUP Identifier '{' TraitStatement* '}'
 }
 class TraitStatement {
     ^KW_TRAIT Identifier '{' TraitItem* '}'
@@ -157,8 +157,8 @@ token {
 @style(keyword)
 token {
     KW_PROPERTY: /属性|property/
-    KW_TRAIT_GROUP: /特质组|特征组|traits|trait-group/
-    KW_TRAIT: /特质|特征|trait/
+    KW_TRAIT_GROUP: /特质组|特征组|天赋组|(trait|talent)s|(trait|talent)-group/
+    KW_TRAIT: /特质|特征|天赋|trait|talent/
     KW_EVENT_GROUP: /事件组|events|event-group/
     KW_EVENT: /事件|event/
     KW_ID:/编号|[Ii][Dd]/

@@ -3,8 +3,8 @@
 #![allow(clippy::unnecessary_cast)]
 #![doc = include_str!("readme.md")]
 
-mod parse_cst;
 mod parse_ast;
+mod parse_cst;
 
 use core::str::FromStr;
 use std::{borrow::Cow, ops::Range, sync::OnceLock};
@@ -34,6 +34,7 @@ pub enum LifeRestartRule {
     Statement,
     PropertyStatement,
     PropertyItem,
+    TraitGroup,
     TraitStatement,
     TraitItem,
     TraitProperty,
@@ -42,6 +43,7 @@ pub enum LifeRestartRule {
     EventProperty,
     IdStatement,
     DescriptionStatement,
+    RequirementStatement,
     Expression,
     Atomic,
     Prefix,
@@ -68,6 +70,7 @@ pub enum LifeRestartRule {
     KW_EVENT,
     KW_ID,
     KW_DESCRIPTION,
+    KW_REQUIREMENT,
     WhiteSpace,
     Comment,
     /// Label for unnamed text literal
@@ -85,6 +88,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::Statement => "",
             Self::PropertyStatement => "",
             Self::PropertyItem => "",
+            Self::TraitGroup => "",
             Self::TraitStatement => "",
             Self::TraitItem => "",
             Self::TraitProperty => "",
@@ -93,6 +97,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::EventProperty => "",
             Self::IdStatement => "",
             Self::DescriptionStatement => "",
+            Self::RequirementStatement => "",
             Self::Expression => "",
             Self::Atomic => "",
             Self::Prefix => "",
@@ -119,6 +124,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::KW_EVENT => "",
             Self::KW_ID => "",
             Self::KW_DESCRIPTION => "",
+            Self::KW_REQUIREMENT => "",
             Self::WhiteSpace => "",
             Self::Comment => "",
             _ => "",
@@ -135,6 +141,7 @@ pub struct RootNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StatementNode {
     PropertyStatement(PropertyStatementNode),
+    TraitGroup(TraitGroupNode),
     TraitStatement(TraitStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
@@ -149,6 +156,14 @@ pub struct PropertyStatementNode {
 pub enum PropertyItemNode {
     DescriptionStatement(DescriptionStatementNode),
     IdStatement(IdStatementNode),
+    RequirementStatement(RequirementStatementNode),
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TraitGroupNode {
+    pub identifier: IdentifierNode,
+    pub trait_statement: Vec<TraitStatementNode>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -162,6 +177,7 @@ pub struct TraitStatementNode {
 pub enum TraitItemNode {
     DescriptionStatement(DescriptionStatementNode),
     IdStatement(IdStatementNode),
+    RequirementStatement(RequirementStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -202,6 +218,11 @@ pub struct IdStatementNode {
 pub struct DescriptionStatementNode {
     pub comma: Vec<CommaNode>,
     pub string: Vec<StringNode>,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RequirementStatementNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -360,6 +381,11 @@ pub struct KwIdNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwDescriptionNode {
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwRequirementNode {
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
