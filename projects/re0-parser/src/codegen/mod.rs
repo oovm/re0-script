@@ -33,20 +33,18 @@ pub enum LifeRestartRule {
     Root,
     Statement,
     PropertyStatement,
-    PropertyBlock,
+    PropertyItem,
     TraitStatement,
     TraitBlock,
     TraitProperty,
     EventStatement,
     EventBlock,
     EventProperty,
+    IdStatement,
     Expression,
     Atomic,
-    NegationExpression,
-    ComparisonExpression,
-    LogicalExpression,
-    ComparisonOperator,
-    LogicalOperator,
+    Prefix,
+    Infix,
     StringRaw,
     StringRawText,
     StringNormal,
@@ -60,9 +58,14 @@ pub enum LifeRestartRule {
     RangeExact,
     Range,
     Boolean,
-    KW_ATTRIBUTE,
+    KW_PROPERTY,
+    KW_TRAIT_GROUP,
     KW_TRAIT,
+    KW_EVENT_GROUP,
     KW_EVENT,
+    KW_ID,
+    KW_TEXT,
+    KW_TEXT_DYNAMIC,
     WhiteSpace,
     Comment,
     /// Label for unnamed text literal
@@ -79,20 +82,18 @@ impl YggdrasilRule for LifeRestartRule {
             Self::Root => "",
             Self::Statement => "",
             Self::PropertyStatement => "",
-            Self::PropertyBlock => "",
+            Self::PropertyItem => "",
             Self::TraitStatement => "",
             Self::TraitBlock => "",
             Self::TraitProperty => "",
             Self::EventStatement => "",
             Self::EventBlock => "",
             Self::EventProperty => "",
+            Self::IdStatement => "",
             Self::Expression => "",
             Self::Atomic => "",
-            Self::NegationExpression => "",
-            Self::ComparisonExpression => "",
-            Self::LogicalExpression => "",
-            Self::ComparisonOperator => "",
-            Self::LogicalOperator => "",
+            Self::Prefix => "",
+            Self::Infix => "",
             Self::StringRaw => "",
             Self::StringRawText => "",
             Self::StringNormal => "",
@@ -106,9 +107,14 @@ impl YggdrasilRule for LifeRestartRule {
             Self::RangeExact => "",
             Self::Range => "",
             Self::Boolean => "",
-            Self::KW_ATTRIBUTE => "",
+            Self::KW_PROPERTY => "",
+            Self::KW_TRAIT_GROUP => "",
             Self::KW_TRAIT => "",
+            Self::KW_EVENT_GROUP => "",
             Self::KW_EVENT => "",
+            Self::KW_ID => "",
+            Self::KW_TEXT => "",
+            Self::KW_TEXT_DYNAMIC => "",
             Self::WhiteSpace => "",
             Self::Comment => "",
             _ => "",
@@ -124,21 +130,19 @@ pub struct RootNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum StatementNode {
-    EventStatement(EventStatementNode),
     PropertyStatement(PropertyStatementNode),
-    TraitStatement(TraitStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PropertyStatementNode {
     pub identifier: IdentifierNode,
-    pub property_block: PropertyBlockNode,
+    pub property_item: Vec<PropertyItemNode>,
     pub span: Range<u32>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct PropertyBlockNode {
-    pub span: Range<u32>,
+pub enum PropertyItemNode {
+    IdStatement(IdStatementNode),
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -183,6 +187,13 @@ pub struct EventPropertyNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct IdStatementNode {
+    pub identifier: IdentifierNode,
+    pub integer: IntegerNode,
+    pub span: Range<u32>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ExpressionNode {
     pub atomic: AtomicNode,
     pub span: Range<u32>,
@@ -200,40 +211,20 @@ pub enum AtomicNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct NegationExpressionNode {
-    pub expression: ExpressionNode,
-    pub span: Range<u32>,
+pub enum PrefixNode {
+    Prefix0,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ComparisonExpressionNode {
-    pub comparison_operator: ComparisonOperatorNode,
-    pub expression: ExpressionNode,
-    pub identifier: IdentifierNode,
-    pub span: Range<u32>,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct LogicalExpressionNode {
-    pub expression: Vec<ExpressionNode>,
-    pub logical_operator: LogicalOperatorNode,
-    pub span: Range<u32>,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum ComparisonOperatorNode {
-    ComparisonOperator0,
-    ComparisonOperator1,
-    ComparisonOperator2,
-    ComparisonOperator3,
-    ComparisonOperator4,
-    ComparisonOperator5,
-}
-#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum LogicalOperatorNode {
-    LogicalOperator0,
-    LogicalOperator1,
+pub enum InfixNode {
+    And,
+    EQ,
+    GEQ,
+    GT,
+    LEQ,
+    LT,
+    NE,
+    Or,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -316,7 +307,12 @@ pub enum BooleanNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct KwAttributeNode {
+pub struct KwPropertyNode {
+    pub span: Range<u32>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwTraitGroupNode {
     pub span: Range<u32>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -326,7 +322,27 @@ pub struct KwTraitNode {
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwEventGroupNode {
+    pub span: Range<u32>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwEventNode {
+    pub span: Range<u32>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwIdNode {
+    pub span: Range<u32>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwTextNode {
+    pub span: Range<u32>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct KwTextDynamicNode {
     pub span: Range<u32>,
 }
 #[derive(Clone, Debug, Hash)]

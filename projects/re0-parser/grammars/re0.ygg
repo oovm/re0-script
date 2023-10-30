@@ -10,11 +10,11 @@ union Statement {
 }
 
 class PropertyStatement {
-    ^KW_PROPERTY Identifier PropertyBlock
+    ^KW_PROPERTY Identifier '{' PropertyItem* '}'
 }
 
-class PropertyBlock {
-    '{' '}'
+union PropertyItem {
+    | IdStatement
 }
 
 class TraitStatement {
@@ -41,7 +41,7 @@ class EventProperty {
     Identifier (':' | '[') Expression (']' | '{' EventBlock '}' | EventBlock)?
 }
 // === 通用属性 === ---------------------------------------------------------------------------------------------------------
-class IDStatement {
+class IdStatement {
     ^KW_ID Identifier Integer
 }
 
