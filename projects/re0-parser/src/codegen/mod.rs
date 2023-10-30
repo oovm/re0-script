@@ -125,7 +125,7 @@ impl YggdrasilRule for LifeRestartRule {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RootNode {
     pub statement: Vec<StatementNode>,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -137,7 +137,7 @@ pub enum StatementNode {
 pub struct PropertyStatementNode {
     pub identifier: IdentifierNode,
     pub property_item: Vec<PropertyItemNode>,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -149,33 +149,33 @@ pub enum PropertyItemNode {
 pub struct TraitStatementNode {
     pub identifier: IdentifierNode,
     pub trait_block: TraitBlockNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TraitBlockNode {
     pub trait_property: Vec<TraitPropertyNode>,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TraitPropertyNode {
     pub atomic: AtomicNode,
     pub identifier: IdentifierNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EventStatementNode {
     pub event_block: EventBlockNode,
     pub identifier: IdentifierNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EventBlockNode {
     pub event_property: Vec<EventPropertyNode>,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -183,20 +183,20 @@ pub struct EventPropertyNode {
     pub event_block: Option<EventBlockNode>,
     pub expression: ExpressionNode,
     pub identifier: IdentifierNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IdStatementNode {
     pub identifier: IdentifierNode,
     pub integer: IntegerNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ExpressionNode {
     pub atomic: AtomicNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -230,19 +230,19 @@ pub enum InfixNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StringRawNode {
     pub string_raw_text: StringRawTextNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StringRawTextNode {
     pub text: String,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StringNormalNode {
     pub string_item: Vec<StringItemNode>,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -255,49 +255,49 @@ pub enum StringItemNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EscapedUnicodeNode {
     pub hex: HexNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EscapedCharacterNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HexNode {
     pub text: String,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TextAnyNode {
     pub text: String,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IdentifierNode {
     pub text: String,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IntegerNode {
     pub text: String,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RangeExactNode {
     pub integer: IntegerNode,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RangeNode {
     pub max: Option<IntegerNode>,
     pub min: Option<IntegerNode>,
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -308,50 +308,50 @@ pub enum BooleanNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwPropertyNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwTraitGroupNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwTraitNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwEventGroupNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwEventNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwIdNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwTextNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KwTextDynamicNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WhiteSpaceNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CommentNode {
-    pub span: Range<u32>,
+    pub span: Range<usize>,
 }

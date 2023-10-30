@@ -1,8 +1,8 @@
-use std::str::FromStr;
+use std::{path::Path, str::FromStr};
 
 use yggdrasil_rt::YggdrasilParser;
 
-use re0_parser::codegen::{LifeRestartParser, LifeRestartRule, RootNode};
+use re0_parser::vm::LifeVM;
 
 #[test]
 fn ready() {
@@ -11,11 +11,7 @@ fn ready() {
 
 #[test]
 fn test_classes() {
-    let text = r##"text class RegexInner {
-    /([^\\\\\\/]|\\\\.)+/
-}"##;
-    let cst = LifeRestartParser::parse_cst(text, LifeRestartRule::Root).unwrap();
-    println!("Short Form:\n{}", cst);
-    let ast = RootNode::from_str(text).unwrap();
-    println!("{ast:#?}")
+    let mut vm = LifeVM::default();
+    vm.load_local(&Path::new("tests/属性.re0"));
+    println!("{vm:#?}")
 }

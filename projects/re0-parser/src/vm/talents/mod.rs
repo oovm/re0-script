@@ -1,40 +1,36 @@
 use super::*;
 
 #[derive(Clone, Debug)]
-pub struct PropertyManager {
+pub struct TalentManager {
     /// 从一开始的属性
     property_id: NonZeroUsize,
-    properties: BTreeMap<NonZeroUsize, PropertyItem>,
+    properties: BTreeMap<NonZeroUsize, TalentItem>,
     // 暂时没分配到 id 的属性
-    buffer: Vec<PropertyItem>,
+    buffer: Vec<TalentItem>,
 }
 
 #[derive(Clone, Debug)]
-pub struct PropertyItem {
+pub struct TalentItem {
     pub name: String,
     pub id: Option<NonZeroUsize>,
     pub file: Option<Url>,
     pub span: Range<usize>,
 }
 
-impl Default for PropertyManager {
+impl Default for TalentManager {
     fn default() -> Self {
-        PropertyManager {
-            property_id: unsafe { NonZeroUsize::new_unchecked(1) },
-            properties: Default::default(),
-            buffer: vec![],
-        }
+        TalentManager { property_id: unsafe { NonZeroUsize::new_unchecked(1) }, properties: Default::default(), buffer: vec![] }
     }
 }
 
-impl Default for PropertyItem {
+impl Default for TalentItem {
     fn default() -> Self {
         Self { name: "".to_string(), id: None, file: None, span: Default::default() }
     }
 }
 
-impl PropertyManager {
-    pub fn insert(&mut self, item: PropertyItem) -> Result<(), LifeError> {
+impl TalentManager {
+    pub fn insert(&mut self, item: TalentItem) -> Result<(), LifeError> {
         match item.id {
             Some(s) => {
                 if self.properties.contains_key(&s) {
@@ -71,4 +67,4 @@ impl PropertyManager {
     }
 }
 
-impl PropertyItem {}
+impl TalentItem {}

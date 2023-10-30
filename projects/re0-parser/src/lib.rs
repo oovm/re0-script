@@ -5,7 +5,9 @@
 #![doc(html_favicon_url = "https://raw.githubusercontent.com/oovm/shape-rs/dev/projects/images/Trapezohedron.svg")]
 
 mod codegen;
+mod errors;
 pub mod vm;
+
 pub use yggdrasil_rt::YggdrasilParser;
 
-// pub use crate::errors::{Error, Result};
+pub use crate::errors::{LifeError, LifeResult};
