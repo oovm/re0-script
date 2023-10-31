@@ -53,6 +53,7 @@ pub enum LifeRestartRule {
     Statement,
     IfStatement,
     IfThenBlock,
+    IfElseIfBlock,
     IfElseBlock,
     Expression,
     Term,
@@ -125,6 +126,7 @@ impl YggdrasilRule for LifeRestartRule {
             Self::Statement => "",
             Self::IfStatement => "",
             Self::IfThenBlock => "",
+            Self::IfElseIfBlock => "",
             Self::IfElseBlock => "",
             Self::Expression => "",
             Self::Term => "",
@@ -316,19 +318,28 @@ pub enum StatementNode {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IfStatementNode {
     pub if_else_block: Option<IfElseBlockNode>,
+    pub if_else_if_block: Option<IfElseIfBlockNode>,
     pub if_then_block: IfThenBlockNode,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IfThenBlockNode {
-    pub expression: Vec<ExpressionNode>,
+    pub expression: ExpressionNode,
+    pub statement: Vec<StatementNode>,
+    pub span: Range<usize>,
+}
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct IfElseIfBlockNode {
+    pub expression: ExpressionNode,
+    pub statement: Vec<StatementNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IfElseBlockNode {
-    pub expression: Vec<ExpressionNode>,
+    pub statement: Vec<StatementNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]
@@ -386,8 +397,8 @@ pub enum AtomicNode {
 #[derive(Clone, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ListNode {
+    pub atomic: Vec<AtomicNode>,
     pub comma: Vec<CommaNode>,
-    pub expression: Vec<ExpressionNode>,
     pub span: Range<usize>,
 }
 #[derive(Clone, Debug, Hash)]

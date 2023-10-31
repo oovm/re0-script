@@ -1,6 +1,8 @@
 use std::{num::ParseIntError, ops::Range};
 
+use crate::codegen::LifeRestartRule;
 use url::Url;
+use yggdrasil_rt::YggdrasilError;
 
 /// The result type of life restart
 pub type LifeResult<T> = std::result::Result<T, LifeError>;
@@ -36,8 +38,21 @@ impl From<std::io::Error> for LifeError {
         LifeErrorKind::RuntimeError { message: value.to_string() }.into()
     }
 }
+
+impl From<()> for LifeError {
+    #[track_caller]
+    fn from(_: ()) -> Self {
+        LifeErrorKind::RuntimeError { message: "void exception".to_string() }.into()
+    }
+}
+
 impl From<ParseIntError> for LifeError {
     fn from(value: ParseIntError) -> Self {
         LifeErrorKind::SyntaxError { message: value.to_string(), file: None, span: Default::default() }.into()
+    }
+}
+impl From<YggdrasilError<LifeRestartRule>> for LifeError {
+    fn from(value: YggdrasilError<LifeRestartRule>) -> Self {
+        LifeErrorKind::SyntaxError { message: value.variant.to_string(), file: None, span: Default::default() }.into()
     }
 }

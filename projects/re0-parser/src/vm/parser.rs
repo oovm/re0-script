@@ -30,9 +30,9 @@ impl LifeVM {
         P: AsRef<Path>,
     {
         let file = file.as_ref().canonicalize()?;
-        let url = Url::from_file_path(&file).unwrap();
+        let url = Url::from_file_path(&file)?;
         let text = read_to_string(&file)?;
-        let ast = RootNode::from_str(&text).unwrap();
+        let ast = RootNode::from_str(&text)?;
         self.load_statements(ast, Some(url))?;
         Ok(())
     }

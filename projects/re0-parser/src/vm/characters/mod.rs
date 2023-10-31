@@ -2,14 +2,14 @@ use super::*;
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Debug)]
-pub struct TalentManager {
+pub struct CharacterManager {
     /// 计数器
     indexer: NonZeroUsize,
-    stories: BTreeMap<NonZeroUsize, TalentItem>,
+    stories: BTreeMap<NonZeroUsize, CharacterItem>,
 }
 
 #[derive(Clone)]
-pub struct TalentItem {
+pub struct CharacterItem {
     pub id: Identifier,
     /// 属性 ID, 用于快速查询
     pub index: Option<NonZeroUsize>,
@@ -17,9 +17,9 @@ pub struct TalentItem {
     pub text: Vec<String>,
 }
 
-impl Debug for TalentItem {
+impl Debug for CharacterItem {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let w = &mut f.debug_struct("Talent");
+        let w = &mut f.debug_struct("Character");
         w.field("name", &self.id.name);
         if let Some(s) = self.index {
             w.field("id", &s);
@@ -29,14 +29,14 @@ impl Debug for TalentItem {
     }
 }
 
-impl Default for TalentManager {
+impl Default for CharacterManager {
     fn default() -> Self {
-        TalentManager { indexer: unsafe { NonZeroUsize::new_unchecked(1) }, stories: Default::default() }
+        CharacterManager { indexer: unsafe { NonZeroUsize::new_unchecked(1) }, stories: Default::default() }
     }
 }
 
-impl TalentManager {
-    pub fn insert(&mut self, mut item: TalentItem) -> Result<(), LifeError> {
+impl CharacterManager {
+    pub fn insert(&mut self, mut item: CharacterItem) -> Result<(), LifeError> {
         let index = item.index.unwrap_or(self.indexer);
         match self.stories.get(&index) {
             Some(old) => Err(LifeErrorKind::DuplicateError {
@@ -54,7 +54,7 @@ impl TalentManager {
     }
 }
 
-impl TalentItem {
+impl CharacterItem {
     pub fn new(id: Identifier) -> Self {
         Self { id, index: None, text: vec![] }
     }

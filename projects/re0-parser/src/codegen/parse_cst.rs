@@ -25,6 +25,7 @@ pub(super) fn parse_cst(input: &str, rule: LifeRestartRule) -> OutputResult<Life
         LifeRestartRule::Statement => parse_statement(state),
         LifeRestartRule::IfStatement => parse_if_statement(state),
         LifeRestartRule::IfThenBlock => parse_if_then_block(state),
+        LifeRestartRule::IfElseIfBlock => parse_if_else_if_block(state),
         LifeRestartRule::IfElseBlock => parse_if_else_block(state),
         LifeRestartRule::Expression => parse_expression(state),
         LifeRestartRule::Term => parse_term(state),
@@ -491,6 +492,8 @@ fn parse_if_statement(state: Input) -> Output {
             Ok(s)
                 .and_then(|s| parse_if_then_block(s).and_then(|s| s.tag_node("if_then_block")))
                 .and_then(|s| builtin_ignore(s))
+                .and_then(|s| s.optional(|s| parse_if_else_if_block(s).and_then(|s| s.tag_node("if_else_if_block"))))
+                .and_then(|s| builtin_ignore(s))
                 .and_then(|s| s.optional(|s| parse_if_else_block(s).and_then(|s| s.tag_node("if_else_block"))))
         })
     })
@@ -511,7 +514,38 @@ fn parse_if_then_block(state: Input) -> Output {
                         s.sequence(|s| {
                             Ok(s)
                                 .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                .and_then(|s| parse_statement(s).and_then(|s| s.tag_node("statement")))
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "}", false))
+        })
+    })
+}
+#[inline]
+fn parse_if_else_if_block(state: Input) -> Output {
+    state.rule(LifeRestartRule::IfElseIfBlock, |s| {
+        s.sequence(|s| {
+            Ok(s)
+                .and_then(|s| {
+                    Err(s).or_else(|s| parse_kw_else_if(s)).or_else(|s| {
+                        s.sequence(|s| {
+                            Ok(s).and_then(|s| parse_kw_else(s)).and_then(|s| builtin_ignore(s)).and_then(|s| parse_kw_if(s))
+                        })
+                    })
+                })
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| builtin_text(s, "{", false))
+                .and_then(|s| builtin_ignore(s))
+                .and_then(|s| {
+                    s.repeat(0..4294967295, |s| {
+                        s.sequence(|s| {
+                            Ok(s)
+                                .and_then(|s| builtin_ignore(s))
+                                .and_then(|s| parse_statement(s).and_then(|s| s.tag_node("statement")))
                         })
                     })
                 })
@@ -527,8 +561,6 @@ fn parse_if_else_block(state: Input) -> Output {
             Ok(s)
                 .and_then(|s| parse_kw_else(s))
                 .and_then(|s| builtin_ignore(s))
-                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
-                .and_then(|s| builtin_ignore(s))
                 .and_then(|s| builtin_text(s, "{", false))
                 .and_then(|s| builtin_ignore(s))
                 .and_then(|s| {
@@ -536,7 +568,7 @@ fn parse_if_else_block(state: Input) -> Output {
                         s.sequence(|s| {
                             Ok(s)
                                 .and_then(|s| builtin_ignore(s))
-                                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                .and_then(|s| parse_statement(s).and_then(|s| s.tag_node("statement")))
                         })
                     })
                 })
@@ -732,7 +764,7 @@ fn parse_list(state: Input) -> Output {
                     s.optional(|s| {
                         s.sequence(|s| {
                             Ok(s)
-                                .and_then(|s| parse_expression(s).and_then(|s| s.tag_node("expression")))
+                                .and_then(|s| parse_atomic(s).and_then(|s| s.tag_node("atomic")))
                                 .and_then(|s| builtin_ignore(s))
                                 .and_then(|s| {
                                     s.repeat(0..4294967295, |s| {
@@ -742,9 +774,7 @@ fn parse_list(state: Input) -> Output {
                                                     Ok(s)
                                                         .and_then(|s| parse_comma(s).and_then(|s| s.tag_node("comma")))
                                                         .and_then(|s| builtin_ignore(s))
-                                                        .and_then(|s| {
-                                                            parse_expression(s).and_then(|s| s.tag_node("expression"))
-                                                        })
+                                                        .and_then(|s| parse_atomic(s).and_then(|s| s.tag_node("atomic")))
                                                 })
                                             })
                                         })
@@ -853,7 +883,7 @@ fn parse_identifier(state: Input) -> Output {
     state.rule(LifeRestartRule::Identifier, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^([_\\p{XID_start}]\\p{XID_continue}*)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(\\p{XID_start}\\p{XID_continue}*)").unwrap())
         })
     })
 }
@@ -1017,7 +1047,7 @@ fn parse_kw_else_if(state: Input) -> Output {
     state.rule(LifeRestartRule::KW_ELSE_IF, |s| {
         s.match_regex({
             static REGEX: OnceLock<Regex> = OnceLock::new();
-            REGEX.get_or_init(|| Regex::new("^(或者|elseif)").unwrap())
+            REGEX.get_or_init(|| Regex::new("^(或|或者|elseif)").unwrap())
         })
     })
 }

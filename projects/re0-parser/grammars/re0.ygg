@@ -26,7 +26,14 @@ union PropertyItem {
     | RequirementStatement
     | OptionStatement
     | EnumerateStatement
+    | CharacterStatement
     | EOS
+}
+class IdStatement {
+    ^KW_ID Integer
+}
+class DescriptionStatement {
+    ^KW_DESCRIPTION String? | '[' (String|^EOS)* ']'
 }
 class EnumerateStatement {
     ^KW_ENUMERATE '[' (variant:Identifier|^COMMA)* ']'
@@ -82,12 +89,9 @@ union EventItem {
 class EventProperty {
     Identifier
 }
-// === 通用属性 === ---------------------------------------------------------------------------------------------------------
-class IdStatement {
-    ^KW_ID Integer
-}
-class DescriptionStatement {
-    ^KW_DESCRIPTION String? | '[' (String|^EOS)* ']'
+// === 事件 === ---------------------------------------------------------------------------------------------------------
+class CharacterStatement {
+    ^KW_CHARACTER '{' Statement* '}'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 union Statement {
@@ -97,13 +101,16 @@ union Statement {
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 class IfStatement {
-    IfThenBlock IfElseBlock?
+    IfThenBlock IfElseIfBlock? IfElseBlock?
 }
 class IfThenBlock {
-    ^KW_IF Expression '{' Expression* '}'
+    ^KW_IF Expression '{' Statement* '}'
+}
+class IfElseIfBlock ^ {
+    (KW_ELSE_IF|KW_ELSE KW_IF) ^Expression '{' ^Statement* '}'
 }
 class IfElseBlock {
-    ^KW_ELSE Expression '{' Expression* '}'
+    ^KW_ELSE '{' Statement* '}'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 atomic class Expression {
@@ -153,7 +160,7 @@ union Atomic {
     | Boolean
 }
 class List {
-    '[' (Expression (COMMA Expression)* COMMA?)? ']'
+    '[' (Atomic (COMMA Atomic)* COMMA?)? ']'
 }
 // === 表达式 === ---------------------------------------------------------------------------------------------------------
 atomic union String {
@@ -195,7 +202,7 @@ text class TextAny {
 }
 
 text class Identifier {
-    /[_\p{XID_start}]\p{XID_continue}*/
+    /\p{XID_start}\p{XID_continue}*/
 }
 
 text class Integer {
@@ -221,15 +228,15 @@ token {
     KW_TRAIT: /特质|特征|天赋|trait|talent/
     KW_EVENT_GROUP: /故事组|事件组|events|event-group/
     KW_EVENT: /故事|事件|event/
+    KW_CHARACTER: /人物|角色|character|npc/
     KW_ID:/编号|[Ii][Dd]/
-    // description
     KW_DESCRIPTION: /动态文本|动态描述|文本|描述|details?/
     KW_REQUIREMENT: /出现要求|要求|requires?/
     KW_EFFECT: /效果|一次性效果|effects?/
     KW_ENUMERATE: /枚举|enumerate/
     KW_OPTIONS: /选项|options/
     KW_IF: /若|如果|if/
-    KW_ELSE_IF: /或者|elseif/
+    KW_ELSE_IF: /或|或者|elseif/
     KW_ELSE: /否则|else/
 }
 
