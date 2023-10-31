@@ -1,17 +1,20 @@
 #![allow(clippy::wrong_self_convention)]
 
+use pratt::{Affix, Associativity, PrattParser, Precedence};
 use std::{
     fmt::{Display, Formatter},
     fs::read_to_string,
     path::Path,
+    vec::IntoIter,
 };
 
 use url::Url;
 
 use crate::{
     codegen::{
-        DescriptionStatementNode, EventGroupNode, EventItemNode, EventStatementNode, IdStatementNode, IdentifierNode,
-        PropertyStatementNode, StringNode, TopStatementNode, TraitItemNode, TraitStatementNode,
+        AtomicNode, BooleanNode, DescriptionStatementNode, EventGroupNode, EventItemNode, EventStatementNode, ExpressionNode,
+        IdStatementNode, IdentifierNode, InfixNode, PrefixNode, PropertyStatementNode, StringNode, SuffixNode, TermNode,
+        TopStatementNode, TraitItemNode, TraitStatementNode,
     },
     vm::talents::TalentItem,
     LifeError,
@@ -140,6 +143,105 @@ impl TalentItem {
         }
     }
 }
+
+#[derive(Debug)]
+enum Expr {
+    Term(AtomicNode),
+    Prefix(PrefixNode),
+    Infix(InfixNode),
+    Suffix(SuffixNode),
+}
+
+impl PrattParser<IntoIter<Expr>> for Expression {
+    type Error = LifeError;
+    type Input = Expr;
+    type Output = Expression;
+
+    fn query(&mut self, input: &Self::Input) -> Result<Affix, Self::Error> {
+        let affix = match input {
+            Expr::Term(_) => Affix::Nilfix,
+            Expr::Prefix(_) => Affix::Prefix(Precedence(2000)),
+            Expr::Infix(o) => match o {
+                InfixNode::Add => Affix::Infix(Precedence(100), Associativity::Left),
+                InfixNode::Sub => Affix::Infix(Precedence(100), Associativity::Left),
+                InfixNode::AddAssign => Affix::Infix(Precedence(90), Associativity::Right),
+                InfixNode::SubAssign => Affix::Infix(Precedence(90), Associativity::Right),
+                InfixNode::And => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::EQ => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::GEQ => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::GT => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::Has => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::LEQ => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::LT => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::NE => Affix::Infix(Precedence(2), Associativity::Left),
+                InfixNode::Or => Affix::Infix(Precedence(2), Associativity::Left),
+            },
+            Expr::Suffix(_) => Affix::Postfix(Precedence(3000)),
+        };
+        Ok(affix)
+    }
+
+    fn primary(&mut self, input: Self::Input) -> Result<Self::Output, Self::Error> {
+        let expr = match input {
+            Expr::Term(v) => match v {
+                AtomicNode::Boolean(v) => match v {
+                    BooleanNode::False => Expression::Boolean(false),
+                    BooleanNode::True => Expression::Boolean(true),
+                },
+                AtomicNode::Identifier(_) => Expression::Boolean(true),
+                AtomicNode::Integer(_) => Expression::Boolean(true),
+                AtomicNode::List(_) => Expression::Boolean(true),
+                AtomicNode::StringNormal(_) => Expression::Boolean(true),
+                AtomicNode::StringRaw(_) => Expression::Boolean(true),
+            },
+            _ => unreachable!(),
+        };
+        Ok(expr)
+    }
+
+    fn infix(&mut self, lhs: Self::Output, tree: Self::Input, rhs: Self::Output) -> Result<Self::Output, Self::Error> {
+        let o = match tree {
+            Expr::Infix(v) => match v {
+                InfixNode::Add => Operator::Add,
+                InfixNode::AddAssign => Operator::Add,
+                InfixNode::And => Operator::Add,
+                InfixNode::EQ => Operator::Add,
+                InfixNode::GEQ => Operator::Add,
+                InfixNode::GT => Operator::Add,
+                InfixNode::Has => Operator::Add,
+                InfixNode::LEQ => Operator::Add,
+                InfixNode::LT => Operator::Add,
+                InfixNode::NE => Operator::Add,
+                InfixNode::Or => Operator::Add,
+                InfixNode::Sub => Operator::Add,
+                InfixNode::SubAssign => Operator::Add,
+            },
+            _ => unreachable!(),
+        };
+        Ok(Expression::infix(lhs, o, rhs))
+    }
+
+    fn prefix(&mut self, tree: Self::Input, rhs: Self::Output) -> Result<Self::Output, Self::Error> {
+        let o = match tree {
+            Expr::Prefix(v) => match v {
+                PrefixNode::Prefix0 => Operator::Add,
+            },
+            _ => unreachable!(),
+        };
+        Ok(Expression::prefix(o, rhs))
+    }
+
+    fn postfix(&mut self, lhs: Self::Output, tree: Self::Input) -> Result<Self::Output, Self::Error> {
+        let o = match tree {
+            Expr::Suffix(v) => match v {
+                SuffixNode::Suffix0 => Operator::Add,
+            },
+            _ => unreachable!(),
+        };
+        Ok(Expression::suffix(lhs, o))
+    }
+}
+
 impl Display for StringNode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {

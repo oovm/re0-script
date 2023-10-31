@@ -1,4 +1,9 @@
-use std::{num::ParseIntError, ops::Range};
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+    num::ParseIntError,
+    ops::Range,
+};
 
 use crate::codegen::LifeRestartRule;
 use url::Url;
@@ -11,6 +16,32 @@ pub type LifeResult<T> = std::result::Result<T, LifeError>;
 #[derive(Clone, Debug)]
 pub struct LifeError {
     kind: Box<LifeErrorKind>,
+}
+impl Error for LifeError {}
+impl Error for LifeErrorKind {}
+impl Display for LifeError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(&self.kind, f)
+    }
+}
+
+impl Display for LifeErrorKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LifeErrorKind::RuntimeError { message } => write!(f, "Runtime Error: {}", message)?,
+            LifeErrorKind::SyntaxError { message, file, span } => {
+                write!(f, "Syntax Error: {}", message)?;
+                if let Some(file) = file {
+                    write!(f, " at {}", file)?;
+                }
+                write!(f, " at {:?}", span)?;
+            }
+            LifeErrorKind::DuplicateError { message, old, new } => {
+                write!(f, "Duplicate Error: {}", message)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 /// The enumerate type of all errors

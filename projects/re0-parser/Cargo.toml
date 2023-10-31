@@ -12,6 +12,7 @@ exclude = ["package.json", "tests/**"]
 
 [dependencies]
 url = "2.4.1"
+pratt = "0.4.0"
 yggdrasil-rt = "0.0.13"
 
 [dev-dependencies]
