@@ -236,11 +236,7 @@ impl Pager {
             let recycled = self.read_page(head)?;
             let next = read_u32(recycled.data.as_slice(), 0);
             let mut meta = self.read_page(0)?;
-            write_u32(
-                meta.data.as_mut_slice(),
-                META_FREELIST_HEAD_OFFSET,
-                next,
-            );
+            write_u32(meta.data.as_mut_slice(), META_FREELIST_HEAD_OFFSET, next);
             self.write_page(&meta)?;
             let blank = Page::zeroed(head);
             self.write_page(&blank)?;

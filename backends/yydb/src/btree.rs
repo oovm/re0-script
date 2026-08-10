@@ -3,7 +3,7 @@
 //! This module provides the page algorithms that will back the integrated
 //! `.yydb` file layout. It does not define a separate product-sidecar format.
 
-use crate::pager::{Page, PageId, Pager, META_BTREE_ROOT_OFFSET, PAGE_USABLE, PAGER_MAGIC};
+use crate::pager::{Page, PageId, Pager, META_BTREE_ROOT_OFFSET, PAGER_MAGIC, PAGE_USABLE};
 use yydb_types::{Error, Result};
 
 /// Leaf page type byte stored at offset 0.

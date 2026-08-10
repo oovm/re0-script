@@ -97,7 +97,8 @@ fn decode_payload(bytes: &[u8]) -> Result<CatalogState> {
         match take_byte(bytes, &mut cursor)? {
             0 => None,
             2 => Some(schema_catalog::SchemaCatalog::decode(&read_bytes(
-                bytes, &mut cursor,
+                bytes,
+                &mut cursor,
             )?)?),
             _ => return Err(Error::Corrupt("unknown catalog blob marker")),
         }
@@ -208,12 +209,7 @@ fn unpack_catalog_page(page: &Page) -> Result<(Vec<u8>, bool, PageId, u32)> {
     if end > PAGE_USABLE {
         return Err(Error::Corrupt("catalog chunk out of range"));
     }
-    Ok((
-        page.data[HEADER_LEN..end].to_vec(),
-        has_next,
-        next,
-        total,
-    ))
+    Ok((page.data[HEADER_LEN..end].to_vec(), has_next, next, total))
 }
 
 fn write_bytes(out: &mut Vec<u8>, value: &[u8]) -> Result<()> {
@@ -235,7 +231,8 @@ fn read_u32(bytes: &[u8], cursor: &mut usize) -> Result<u32> {
 }
 
 fn read_bytes(bytes: &[u8], cursor: &mut usize) -> Result<Vec<u8>> {
-    let len = usize::try_from(read_u32(bytes, cursor)?).map_err(|_| Error::Corrupt("catalog length"))?;
+    let len =
+        usize::try_from(read_u32(bytes, cursor)?).map_err(|_| Error::Corrupt("catalog length"))?;
     let end = cursor
         .checked_add(len)
         .ok_or(Error::Corrupt("catalog cursor overflow"))?;

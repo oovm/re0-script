@@ -6,11 +6,17 @@ const stored = localStorage.getItem(storageKey);
 export const locale = ref<Locale>(
     stored === "zh-CN" || stored === "en-US"
         ? stored
-        : navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US",
+        : navigator.language.toLowerCase().startsWith("zh")
+          ? "zh-CN"
+          : "en-US",
 );
 export const isZh = computed(() => locale.value === "zh-CN");
-watch(locale, (value) => {
-    localStorage.setItem(storageKey, value);
-    document.documentElement.lang = value;
-}, { immediate: true });
-export const text = <T>(zh: T, en: T): T => isZh.value ? zh : en;
+watch(
+    locale,
+    (value) => {
+        localStorage.setItem(storageKey, value);
+        document.documentElement.lang = value;
+    },
+    { immediate: true },
+);
+export const text = <T>(zh: T, en: T): T => (isZh.value ? zh : en);

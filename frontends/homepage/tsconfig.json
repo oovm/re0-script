@@ -10,9 +10,7 @@
         "resolveJsonModule": true,
         "types": ["vite/client"],
         "paths": {
-            "@game-gpt/vos-textmate": [
-                "../../../vos-language/projects/vos.ts/textmate/index.ts"
-            ]
+            "@game-gpt/vos-textmate": ["../../../vos-language/projects/vos.ts/textmate/index.ts"]
         }
     },
     "include": ["src/**/*.ts", "src/**/*.vue"]

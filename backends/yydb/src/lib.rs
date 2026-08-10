@@ -1275,11 +1275,7 @@ fn open_short_or_torn_paged(path: &Path, reason: &'static str) -> Result<FileLay
     Ok(FileLayout::Paged(Mutex::new(pager)))
 }
 
-fn prepare_journal_sidecars(
-    path: &Path,
-    mode: JournalMode,
-    layout: &FileLayout,
-) -> Result<()> {
+fn prepare_journal_sidecars(path: &Path, mode: JournalMode, layout: &FileLayout) -> Result<()> {
     match mode {
         JournalMode::Wal => ensure_wal_sidecars(path),
         JournalMode::Delete => {
@@ -2515,7 +2511,10 @@ mod tests {
         assert_eq!(reopened.wal_frame_count().unwrap(), frames_before);
         // Soft-repair must have truncated the torn body off the WAL.
         let wal_len = fs::metadata(wal_path(&path)).unwrap().len();
-        assert_eq!(wal_len, journal::read_shm(&shm_path(&path)).unwrap().wal_bytes);
+        assert_eq!(
+            wal_len,
+            journal::read_shm(&shm_path(&path)).unwrap().wal_bytes
+        );
         drop(reopened);
         cleanup(&path);
     }
@@ -2584,7 +2583,8 @@ mod tests {
                 .open(wal_path(&path))
                 .unwrap();
             // Non-type-1 garbage after complete frames (dirty tail / torn header).
-            file.write_all(&[0xFF, 0x00, 0xDE, 0xAD, 0xBE, 0xEF]).unwrap();
+            file.write_all(&[0xFF, 0x00, 0xDE, 0xAD, 0xBE, 0xEF])
+                .unwrap();
             file.flush().unwrap();
         }
 
@@ -2715,7 +2715,10 @@ mod tests {
         assert_eq!(reopened.get("committed").unwrap(), Some(b"yes".to_vec()));
         // Orphan CAS file may still exist (not rolled back); it is not a row.
         assert!(reopened.objects().path_for(&object).exists());
-        assert_eq!(reopened.get(&format!("row/{}", object.hash_hex())).unwrap(), None);
+        assert_eq!(
+            reopened.get(&format!("row/{}", object.hash_hex())).unwrap(),
+            None
+        );
         assert_eq!(reopened.record_count().unwrap(), 1);
         // Direct CAS read still works — bytes store ≠ committed database truth.
         assert_eq!(&*reopened.get_object(&object).unwrap(), b"orphan-bytes");

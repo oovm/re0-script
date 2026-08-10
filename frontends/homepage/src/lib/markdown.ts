@@ -1,9 +1,5 @@
 import { Marked } from "marked";
-import {
-    createHighlighter,
-    type Highlighter,
-    type LanguageRegistration,
-} from "shiki";
+import { createHighlighter, type Highlighter, type LanguageRegistration } from "shiki";
 import { vosLanguage as sharedVos } from "@game-gpt/vos-textmate";
 
 /** Same TextMate grammar as `vscode-vos` (`@game-gpt/vos-textmate`). */
