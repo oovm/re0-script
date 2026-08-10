@@ -1,11 +1,9 @@
 <template>
-    <section class="demo panel">
-        <h2>本地帧编解码演示</h2>
+    <section class="demo">
+        <div class="demo-head"><span>INTERACTIVE</span><h2>本地帧编解码</h2></div>
         <p class="muted">
-            使用 <code>@yydb/yydb-client</code> 在浏览器内编码/解码
-            <code>YYDB</code>/<code>YYDS</code>（后端自称，效果相同）+ 版本
-            <code>0000</code>（演进 <code>0001</code>）。前端不强求魔数与预期产品一致。
-            不连接 live serve。
+            使用 <code>@yydb/yydb-client</code> 在浏览器内编码和解码一个
+            Hello 帧。所有操作均在当前页面完成，不会连接数据库。
         </p>
         <label>
             request id
@@ -16,8 +14,8 @@
             <input v-model="bodyText"/>
         </label>
         <div class="row">
-            <button type="button" @click="encode">Encode Hello</button>
-            <button type="button" class="secondary" @click="roundtrip">
+            <button type="button" class="btn btn-primary" @click="encode">Encode Hello</button>
+            <button type="button" class="btn btn-ghost" @click="roundtrip">
                 Encode → Decode
             </button>
         </div>
@@ -27,8 +25,8 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue";
-import {MsgType, decodeFrame, encodeFrame} from "@yydb/yydb-client";
+import { ref } from "vue";
+import { MsgType, decodeFrame, encodeFrame } from "@yydb/yydb-client";
 
 const requestId = ref(1);
 const bodyText = ref("");
@@ -73,16 +71,25 @@ encode();
 </script>
 
 <style scoped>
-.panel {
-    background: white;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 1rem 1.1rem;
-    margin-top: 1.25rem;
+.demo {
+    margin-top: 2.5rem;
+    padding: 1.4rem;
+    border: 1px solid #dfe5eb;
+    border-radius: 8px;
+    background:#f8fafc;
+}
+.demo-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.5rem}.demo-head>span{padding:.25rem .45rem;border-radius:3px;background:#e4f8f0;color:#187754;font:700 .55rem var(--font-mono);letter-spacing:.1em}
+
+h2 {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-body);
+    font-size: 1.25rem;
+    letter-spacing: 0;
 }
 
 .muted {
     color: var(--muted);
+    margin: 0 0 0.5rem;
 }
 
 label {
@@ -95,37 +102,26 @@ label {
 
 input {
     border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 0.45rem 0.6rem;
+    border-radius: 5px;
+    padding: 0.5rem 0.65rem;
+    background: var(--surface);
+    color: var(--ink);
 }
 
 .row {
     display: flex;
     gap: 0.6rem;
     flex-wrap: wrap;
-}
-
-button {
-    border: 0;
-    border-radius: 6px;
-    padding: 0.45rem 0.85rem;
-    background: var(--accent);
-    color: white;
-    cursor: pointer;
-}
-
-button.secondary {
-    background: #e8eef4;
-    color: var(--ink);
+    margin-bottom: 0.85rem;
 }
 
 .mono {
-    font-family: ui-monospace, Consolas, monospace;
     white-space: pre-wrap;
     word-break: break-word;
-    background: #101820;
-    color: #e8eef4;
-    padding: 0.75rem;
-    border-radius: 8px;
+    background: #0c1118;
+    color: #dce5ed;
+    padding: 0.85rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
 }
 </style>

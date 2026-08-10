@@ -10,16 +10,22 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
+authors = ["Yggdrasill Team <192607617@qq.com>"]
+license = "MPL-2.0"
 
 [workspace.dependencies]
 blake3 = "1"
+fs4 = "0.13"
 clap = { version = "4", features = ["derive"] }
 sha1 = "0.10"
 base64 = "0.22"
+miette = { version = "7", features = ["fancy"] }
+thiserror = "2"
 uuid = { version = "1", features = ["serde", "v4"] }
-# Shared VOS schema contract — always the voml/vos-language `dev` branch (not a
-# forked dialect). Path overrides are for local hacking only; publish/CI use git.
-vos = { version = "0.1.0", git = "https://github.com/voml/vos-language.git", branch = "dev" }
+# Shared VOS schema contract — language authority is vos-language (`dev`).
+# Path is used while the parser lands locally; publish/CI should switch back to:
+# vos = { version = "0.1.0", git = "https://github.com/voml/vos-language.git", branch = "dev" }
+vos = { version = "0.1.0", path = "../vos-language/projects/vos.rs/vos" }
 oxc_allocator = "0.100.0"
 oxc_ast = "0.100.0"
 oxc_codegen = "0.100.0"

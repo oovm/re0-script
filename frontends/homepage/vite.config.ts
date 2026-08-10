@@ -9,6 +9,13 @@ export default defineConfig({
             "@yydb/yydb-client": fileURLToPath(
                 new URL("../yydb-client/src/index.ts", import.meta.url),
             ),
+            // Shared with vscode-vos — do not fork a homepage-only grammar.
+            "@game-gpt/vos-textmate": fileURLToPath(
+                new URL(
+                    "../../../vos-language/projects/vos.ts/textmate",
+                    import.meta.url,
+                ),
+            ),
         },
     },
     server: {

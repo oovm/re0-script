@@ -59,6 +59,14 @@ YYDB currently centres on `table` schemas and durable records. The broader VOS l
 unions, and service contracts; those constructs are shared with the surrounding VOS tooling as the database query and
 generation surfaces grow.
 
+### VOS is the only database language
+
+YYDB is a native VOS database. VOS is the only public language for schema, DDL,
+queries, projections, and writes. YYDB does not introduce SQL, a SQL parser,
+SQL AST, a SQL-to-VOS translator, or a SQL compatibility endpoint. A feature is
+designed in VOS semantics first and executed through the VOS IR; SQL is not an
+intermediate implementation target.
+
 The same VOS contract is available from the Rust API, the CLI, and the TypeScript client. That keeps a schema
 understandable when a project moves between a desktop tool, an edge process, and a browser-facing host.
 
@@ -79,7 +87,8 @@ their structured data:
 
 The object store is deliberately unified: files, bytes, vectors, and future ANN segments use one
 `<db>.objects/objects/…` layout. YYDB 0.1 provides vector and object persistence; ANN indexing/search and the full VOS
-query executor are separate capabilities still being developed.
+query executor are separate capabilities still being developed. On-disk layout (snapshot vs paged eras, WAL recovery)
+is documented in [`documentation/file-format.md`](./documentation/file-format.md).
 
 ## 📦 What the current release provides
 
@@ -150,7 +159,10 @@ endpoint.
 
 YYDB is the lightweight, local product: a single `.yydb` file and an embedded
 engine. [YYDS](https://github.com/yy-database/yyds) is the separate distributed product for multi-node deployments that
-need permissions, audit, and fleet operations.
+need permissions, audit, and fleet operations. YYDS may expose an SQL-shaped
+compatibility facade for legacy services that cannot migrate their application
+paradigm at once, but that facade is an adapter boundary of YYDS. It is not
+part of YYDB and does not change the native VOS model of either product.
 
 ## Learn more
 

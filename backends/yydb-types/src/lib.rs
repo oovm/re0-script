@@ -5,6 +5,8 @@
 
 use std::{error, fmt, io, result, sync::Arc};
 
+use miette::Diagnostic;
+
 /// Soft recommendation: prefer CAS above this size instead of row-inline bytes.
 pub const INLINE_BYTES_MAX: usize = 4 * 1024;
 
@@ -33,16 +35,56 @@ pub enum Error {
     },
     /// UDF body failed or rejected its arguments.
     Udf { name: String, message: String },
-    /// Schema document failed VOS validation (shared language contract).
-    Schema { message: String },
+    /// Schema / program diagnostic **without** attached source text.
+    ///
+    /// Prefer [`Self::Vos`] for parse/check failures so the originating span
+    /// remains highlightable. Host catalog messages may still use this form.
+    Schema {
+        /// Human-readable reason.
+        message: String,
+        /// Byte range `[start, end)` in the VOS source when known.
+        span: Option<(usize, usize)>,
+        /// Suggested repair for the caller.
+        hint: Option<String>,
+    },
+    /// VOS language failure with miette provenance (source + span + related).
+    Vos(miette::Error),
     /// CAS object missing on disk / hot cache.
     ObjectNotFound { hash_hex: String },
     /// Chunked read or manifest is inconsistent.
     ObjectCorrupt { message: String },
     /// Feature exists as a product surface but is not implemented yet.
     Unsupported(&'static str),
+    /// Transaction begin/commit/rollback protocol violation.
+    Transaction { message: String },
+    /// Another connection or process holds the exclusive write lease.
+    ///
+    /// Process-local gate + OS `{db}-write.lock`. See
+    /// `documentation/concurrency.md`.
+    Busy { message: String },
     /// Wire protocol / serve client failure.
     Protocol { message: String },
+}
+
+impl Error {
+    /// True when this is a language/schema diagnostic (with or without miette).
+    pub fn is_schema_like(&self) -> bool {
+        matches!(self, Self::Schema { .. } | Self::Vos(_))
+    }
+
+    /// True when another writer holds the exclusive write lease.
+    pub fn is_busy(&self) -> bool {
+        matches!(self, Self::Busy { .. })
+    }
+
+    /// Message text for schema-like errors (tests / simple hosts).
+    pub fn schema_message(&self) -> Option<String> {
+        match self {
+            Self::Schema { message, .. } => Some(message.clone()),
+            Self::Vos(err) => Some(err.to_string()),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for Error {
@@ -66,12 +108,28 @@ impl fmt::Display for Error {
                 "UDF {name} arity mismatch: expected {expected} args, got {got}"
             ),
             Self::Udf { name, message } => write!(f, "UDF {name}: {message}"),
-            Self::Schema { message } => write!(f, "VOS schema: {message}"),
+            Self::Schema {
+                message,
+                span,
+                hint,
+            } => {
+                write!(f, "VOS schema: {message}")?;
+                if let Some((start, end)) = span {
+                    write!(f, " (bytes {start}..{end})")?;
+                }
+                if let Some(hint) = hint {
+                    write!(f, "; hint: {hint}")?;
+                }
+                Ok(())
+            }
+            Self::Vos(error) => write!(f, "{error}"),
             Self::ObjectNotFound { hash_hex } => {
                 write!(f, "object not found: {hash_hex}")
             }
             Self::ObjectCorrupt { message } => write!(f, "object corrupt: {message}"),
             Self::Unsupported(feature) => write!(f, "unsupported: {feature}"),
+            Self::Transaction { message } => write!(f, "transaction: {message}"),
+            Self::Busy { message } => write!(f, "busy: {message}"),
             Self::Protocol { message } => write!(f, "protocol: {message}"),
         }
     }
@@ -81,6 +139,57 @@ impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::Io(error) => Some(error),
+            Self::Vos(error) => Some(error.as_ref()),
+            _ => None,
+        }
+    }
+}
+
+impl Diagnostic for Error {
+    fn code<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
+        match self {
+            Self::Vos(error) => error.code(),
+            Self::Schema { .. } => Some(Box::new("yydb::schema")),
+            _ => None,
+        }
+    }
+
+    fn help<'a>(&'a self) -> Option<Box<dyn fmt::Display + 'a>> {
+        match self {
+            Self::Vos(error) => error.help(),
+            Self::Schema { hint, .. } => hint
+                .as_ref()
+                .map(|h| Box::new(h.as_str()) as Box<dyn fmt::Display + 'a>),
+            _ => None,
+        }
+    }
+
+    fn labels(&self) -> Option<Box<dyn Iterator<Item = miette::LabeledSpan> + '_>> {
+        match self {
+            Self::Vos(error) => error.labels(),
+            Self::Schema {
+                message,
+                span: Some((start, end)),
+                ..
+            } => {
+                let len = end.saturating_sub(*start).max(1);
+                let label = miette::LabeledSpan::new(Some(message.clone()), *start, len);
+                Some(Box::new(std::iter::once(label)))
+            }
+            _ => None,
+        }
+    }
+
+    fn source_code(&self) -> Option<&dyn miette::SourceCode> {
+        match self {
+            Self::Vos(error) => error.source_code(),
+            _ => None,
+        }
+    }
+
+    fn related<'a>(&'a self) -> Option<Box<dyn Iterator<Item = &'a dyn Diagnostic> + 'a>> {
+        match self {
+            Self::Vos(error) => error.related(),
             _ => None,
         }
     }
@@ -89,6 +198,12 @@ impl error::Error for Error {
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Self {
         Self::Io(error)
+    }
+}
+
+impl From<miette::Error> for Error {
+    fn from(error: miette::Error) -> Self {
+        Self::Vos(error)
     }
 }
 

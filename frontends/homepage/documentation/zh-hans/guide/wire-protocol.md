@@ -1,18 +1,18 @@
-# 二进制协议摘要
+# 二进制协议
 
-传输是 **YY 二进制帧**，不是 JSON REST，也不是 SQL。DDL/查询语言侧是 **VOS**。
+YYDB 客户端使用紧凑的二进制帧与本地引擎通信。应用层的数据定义和查询仍然使用 VOS；线协议只负责传输请求与响应。
 
-- 前缀：产品魔数 **`YYDB` \| `YYDS`**（后端自称，效果相同，前端不强求一致）+ 四位版本 **`0000`**（演进 **`0001`**、…）
-- 头：`msg_type` / `flags` / `request_id` / `body_len`（小端）
-- 运输：TCP，或 WebSocket `/wire`（帧体相同）
+## 帧结构
 
-前端库 **`@yydb/yydb-client`**（以及本站 / WebUI）按协议说话， **不探测**后端是 YYDB 还是 YYDS。包名带 `yydb` 只因为当前仓库提供参考实现。
+- **前缀**：产品标识 `YYDB` 与四位协议版本。
+- **头部**：`msg_type`、`flags`、`request_id` 和 `body_len`，使用小端编码。
+- **载荷**：由消息类型定义的二进制内容。
+- **传输**：TCP，或使用相同帧体的 WebSocket `/wire`。
 
-Rust（本仓库）：
+`request_id` 将响应与请求对应起来，因此一个连接可以处理多个连续操作。协议版本允许客户端在建立连接时判断兼容性。
 
-- `backends/yydb`：YYDB 嵌入式门面
-- `backends/yydb-client`：YYDB 远程 TCP 客户端
+## 客户端
 
-完整说明：[`../../../../../documentation/serve-protocol.md`](../../../../../documentation/serve-protocol.md)。
+浏览器和 WebUI 可使用 `@yydb/yydb-client` 完成帧编解码与连接管理。TypeScript / Node.js 产品通常无需直接处理协议，应使用 `@yydb/yydb` 打开数据库。
 
-v1：Hello、Info、SchemaGet / SchemaEnsure、KvGet / KvPut。
+当前协议覆盖引擎信息、schema 读取与确认，以及键值读取和写入。下面的演示完全在浏览器内完成帧往返，不会建立网络连接。

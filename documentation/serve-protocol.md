@@ -16,6 +16,10 @@ In this repository the reference host is `yydb serve` and encodes `YYDB` +
 `0000`. The TypeScript client (`@yydb/yydb-client`) and WebUI/homepage speak the same layout. This is **not** an HTTP
 JSON API and **not** a SQL dialect.
 
+YYDB's serve endpoint is VOS-native and must not grow an SQL parser, SQL AST,
+SQL translation layer, or SQL-shaped compatibility API. Legacy SQL
+compatibility belongs only to an explicitly isolated YYDS adapter.
+
 ## Threat model (no ACL) — YYDB reference serve
 
 The reference `yydb serve` has **no** login, tenant, role, or grant system. Anyone who can open the socket can read and
@@ -83,7 +87,8 @@ Unknown `msg_type` → `Error` with the same `request_id`.
 ## Out of scope for version `0000`
 
 - Authentication / RBAC
-- Full VOS query execution
+- Full VOS operations execution (`User.filter(…).collect()`, … —
+  see `vos-language` docs)
 - CAS object streaming RPCs
 - TLS termination as a product surface
 - Version `0001` layout changes (defined when that generation ships)

@@ -3,6 +3,14 @@
 This package contains the YYDB product homepage and the Chinese user guides. It is the documentation surface for people
 evaluating or using YYDB; the database engine and client packages live alongside it in this repository.
 
+## Site structure
+
+- `/` — product landing
+- `/d/:path` — Chinese guides (`overview`, `guide/embed-and-serve`, …)
+- `/playground` — local wire Playground (same origin; needs `yydb serve`)
+
+Built with Vue 3, Vite, vue-router, and Shiki for fenced-code highlighting.
+
 ## User guides
 
 - [中文文档首页](https://github.com/yy-database/yydb.rs/tree/dev/frontends/homepage/documentation/zh-hans)
@@ -19,6 +27,8 @@ pnpm --filter @yydb/yydb-client build
 pnpm --filter @yydb/yydb-homepage dev
 ```
 
+Open `http://localhost:5173/`.
+
 Create a production build with:
 
 ```bash
@@ -34,4 +44,4 @@ The repository's implementation and protocol notes are maintained separately in 
 |--------------------------------------------------------------------------------------------|-------------------------|
 | [`@yydb/yydb`](https://www.npmjs.com/package/@yydb/yydb)                                   | Node.js file API        |
 | [`@yydb/yydb-client`](https://www.npmjs.com/package/@yydb/yydb-client)                     | Browser and wire client |
-| [`@yydb/yydb-webui`](https://github.com/yy-database/yydb.rs/tree/dev/frontends/yydb-webui) | Local database explorer |
+| [`@yydb/yydb-webui`](https://github.com/yy-database/yydb.rs/tree/dev/frontends/yydb-webui) | Optional standalone Playground build; prefer homepage `/playground` |

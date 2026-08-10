@@ -1,0 +1,215 @@
+:root {
+    --ink: #20201c;
+    --ink-soft: #474741;
+    --muted: #707068;
+    --line: #d8d4ca;
+    --line-strong: #bcb7ac;
+    --paper: #f3f1ec;
+    --paper-deep: #e8e4da;
+    --surface: #ffffff;
+    --accent: #5b48a6;
+    --accent-deep: #45358b;
+    --accent-soft: #e4dff5;
+    --violet: #5b48a6;
+    --violet-soft: #e8e3f7;
+    --coral: #e66d57;
+    --coral-soft: #f5d7cf;
+    --green: #247c5a;
+    --mint: #70caa7;
+    --mint-soft: #d9eee5;
+    --slate: #20201c;
+
+    --font-display: "Anybody", "Arial Narrow", sans-serif;
+    --font-body: "Source Sans 3", "PingFang SC", "Noto Sans SC", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+
+    color: var(--ink);
+    background: var(--paper);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    background: var(--paper);
+}
+
+a {
+    color: var(--accent-deep);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+}
+
+a:hover {
+    color: var(--ink);
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+code,
+.mono {
+    font-family: var(--font-mono);
+}
+
+.site-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.site-main {
+    flex: 1;
+}
+
+.container {
+    width: min(1120px, calc(100% - 2.5rem));
+    margin-inline: auto;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1.25rem;
+    min-height: 46px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-deep);
+    color: #fff;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: inherit;
+    border-color: color-mix(in srgb, currentColor 30%, transparent);
+}
+
+.btn-ghost:hover {
+    background: color-mix(in srgb, currentColor 7%, transparent);
+    color: inherit;
+}
+
+.warn {
+    background: #fff6e8;
+    border: 1px solid #efd3a4;
+    color: #7a4a0a;
+    padding: 0.9rem 1rem;
+    border-radius: 2px;
+}
+
+.markdown {
+    max-width: 48rem;
+}
+
+.markdown > :first-child {
+    margin-top: 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+    font-family: var(--font-body);
+    letter-spacing: 0;
+    line-height: 1.15;
+}
+
+.markdown h1 {
+    margin-bottom:1.3rem;
+    padding-bottom:1.1rem;
+    border-bottom:1px solid #e7ebf0;
+    font-size: clamp(2rem, 3.2vw, 2.75rem);
+    font-weight:700;
+}
+
+.markdown h2 {
+    margin-top: 2.8rem;
+    padding-top:.3rem;
+    font-size: 1.45rem;
+    font-weight:700;
+}
+.markdown h3{margin-top:2rem;font-size:1.08rem}.markdown p{line-height:1.78}.markdown ul,.markdown ol{padding-left:1.4rem}.markdown li{margin:.35rem 0;line-height:1.65}.markdown blockquote{margin:1.5rem 0;padding:.85rem 1rem;border-left:3px solid #6651e7;background:#f5f3ff;color:#535f6f}.markdown a{color:#5742cc;font-weight:600}
+
+.markdown p,
+.markdown li {
+    color: var(--ink-soft);
+}
+
+.markdown table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    margin: 1.25rem 0;
+}
+
+.markdown th,
+.markdown td {
+    border: 1px solid var(--line);
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.markdown th {
+    background: #f0f2f5;
+    color: var(--ink);
+}
+
+.markdown :not(pre) > code {
+    font-size: 0.9em;
+    background: var(--paper-deep);
+    padding: 0.12em 0.35em;
+    border-radius: 4px;
+}
+
+.markdown .shiki {
+    margin: 1.1rem 0;
+    padding: 1rem 1.1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}

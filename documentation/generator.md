@@ -7,8 +7,9 @@ This is a **component of `yydb-tools`** (the `yydb` binary), not a separate publ
 
 ## Pipeline
 
-1. **Parse** — interim VOS *subset* lexer (one or more `table` decls, `@@id`, scalar fields). Replace with `vos::parser`
-   when the language crate exposes a stable check/parse API.
+1. **Parse** — `vos::parser::parse_document` (language authority in
+   `vos-language`). The generator lowers the persistence subset into
+   `TsSchemaIr`; it must not grow a parallel VOS dialect.
 2. **IR** — `TsSchemaIr` (tables / fields / scalars / embedded VOS source + schema version).
 3. **Emit** — build an OXC `Program` with `AstBuilder`, print with
    `oxc_codegen`. Declaration text is not string-concatenated.
